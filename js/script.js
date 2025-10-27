@@ -223,7 +223,7 @@ function showError(message) {
  */
 function createSession() {
     isCreator = true;
-    // NOVO FLUXO: Leva o criador direto para a seleção de categoria.
+    // Leva o criador para a tela de seleção de categoria.
     renderCategorySelection();
     switchScreen('category-select-screen');
 }
@@ -346,23 +346,14 @@ function handleSessionStateChange(data) {
     if (isCreator && !data.joinerId) {
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
-        }
-        // A função updateLobbyStatus é chamada dentro de switchScreen('lobby') no novo código
-        updateLobbyStatus(); 
+        } 
+        updateLobbyStatus();
         return;
     }
 }
 
 /**
  * Atualiza a UI do Lobby (aguardando jogador)
- */
-function updateLobbyStatus() {
-    elements.sessionIdDisplay.textContent = currentSessionId;
-    elements.lobbyStatus.textContent = "Aguardando outro jogador entrar...";
-}
-
-/**
- * Limpa o estado da sessão e volta para casa.
  */
 function leaveSession() {
     if (sessionUnsubscribe) {
