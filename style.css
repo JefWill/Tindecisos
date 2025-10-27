@@ -382,7 +382,7 @@ html, body {
     color: #333;
 }
 #restart-btn {
-    background-color: #007bff;
+            background-color: #007bff;
     color: white;
     border: none;
     padding: 1rem;
@@ -395,7 +395,7 @@ html, body {
     margin-top: auto; /* Empurra para baixo */
 }
 #restart-btn:hover {
-    background-color: #0056b3;
+            background-color: #0056b3;
 }
 
 /* --- Tela de Gerenciamento (REFEITA) --- */
@@ -493,7 +493,7 @@ html, body {
 /* Botão de Voltar (NOVO) */
 #back-to-home-from-manage-cat-btn,
 #back-to-manage-cat-btn {
-    background-color: #6c757d; /* Cinza escuro */
+            background-color: #6c757d; /* Cinza escuro */
     color: white;
     border: none;
     padding: 1rem;
@@ -517,7 +517,7 @@ html, body {
 
 /* --- Estilos Gerais de Botões --- */
 .start-btn, .manage-btn {
-    background-color: #007bff; /* Azul */
+            background-color: #007bff; /* Azul */
     color: white;
     border: none;
     padding: 1rem;
