@@ -188,11 +188,20 @@ function renderLogo() {
 }
 
 function switchScreen(screenName) {
+    console.log("🔄 Mudando para tela:", screenName);
+    
+    // Remove active de todas as telas
     Object.values(screens).forEach(screen => {
         screen.classList.remove('active');
     });
+    
+    // Ativa a tela solicitada
     if (screens[screenName]) {
         screens[screenName].classList.add('active');
+        console.log("✅ Tela ativada:", screenName);
+    } else {
+        console.error("❌ Tela não encontrada:", screenName);
+        console.log("📋 Telas disponíveis:", Object.keys(screens));
     }
 }
 
@@ -224,7 +233,7 @@ function createSession() {
             if (isAppDataReady && appData && Object.keys(appData).length > 0) {
                 clearInterval(checkInterval);
                 renderCategorySelection();
-                switchScreen('category-select-screen');
+                switchScreen('categorySelect'); // CORRIGIDO
             }
         }, 100);
         return;
@@ -233,7 +242,7 @@ function createSession() {
     // Força renderização e mudança de tela
     console.log("Renderizando categorias:", Object.keys(appData));
     renderCategorySelection();
-    switchScreen('category-select-screen');
+    switchScreen('categorySelect'); // CORRIGIDO: usa o nome correto do mapeamento
     
     // DEBUG: Log para verificar
     setTimeout(() => {
@@ -817,6 +826,8 @@ function dragEnd(e) {
 // --- Inicialização do DOM ---
 document.addEventListener('DOMContentLoaded', () => {
     
+    console.log("🚀 DOM Carregado - Iniciando app...");
+    
     // Mapeia todas as telas
     screens = {
         login: document.getElementById('login-screen'),
@@ -829,6 +840,10 @@ document.addEventListener('DOMContentLoaded', () => {
         manageItems: document.getElementById('manage-items-screen'),
         loading: document.getElementById('loading-screen')
     };
+    
+    console.log("✅ Telas mapeadas:", Object.keys(screens));
+    
+    console.log("✅ Telas mapeadas:", Object.keys(screens));
     
     // Mapeia botões
     buttons = {
@@ -843,10 +858,14 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelAdd: document.getElementById('cancel-add-btn'),
         backToHomeFromManageCat: document.getElementById('back-to-home-from-manage-cat-btn'),
         backToManageCat: document.getElementById('back-to-manage-cat-btn'),
+        backToHomeFromCategory: document.getElementById('back-to-home-from-category'),
+        cancelLobby: document.getElementById('cancel-lobby-btn'),
         logout: document.getElementById('logout-btn'),
         confirmDelete: document.getElementById('confirm-delete-btn'),
         cancelDelete: document.getElementById('cancel-delete-btn')
     };
+    
+    console.log("✅ Botões mapeados:", Object.keys(buttons).length);
 
     // Mapeia outros elementos
     elements = {
@@ -885,7 +904,12 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
 
     // Tela Inicial
-    buttons.createSession.addEventListener('click', createSession);
+    buttons.createSession.addEventListener('click', () => {
+        console.log("🔵 Botão 'Criar Nova Sessão' clicado!");
+        console.log("📊 Estado atual - isAppDataReady:", isAppDataReady);
+        console.log("📊 Estado atual - appData keys:", Object.keys(appData));
+        createSession();
+    });
     buttons.joinSession.addEventListener('click', joinSession);
     buttons.openManage.addEventListener('click', () => {
         renderManageCategoryList();
@@ -912,6 +936,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botões de Navegação
     buttons.backToHomeFromManageCat.addEventListener('click', () => switchScreen('home'));
     buttons.backToManageCat.addEventListener('click', () => switchScreen('manageCategory'));
+    buttons.backToHomeFromCategory.addEventListener('click', () => {
+        isCreator = false;
+        switchScreen('home');
+    });
+    buttons.cancelLobby.addEventListener('click', leaveSession);
 
     // Listeners da Lista de Gerenciamento
     elements.manageList.addEventListener('click', (e) => {
@@ -949,6 +978,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('touchmove', dragMove, { passive: false }); 
     document.addEventListener('touchend', dragEnd); 
 
-    // Inicialização
+    // --- Inicialização ---
+    console.log("🎬 Iniciando Firebase...");
     initializeAppFirebase();
 });
