@@ -307,34 +307,28 @@ async function joinSession() {
  * Este é o coração do app multiplayer.
  */
 function listenToSession(sessionId) {
-    // Se já houver um listener, cancela antes de criar um novo
+    // Cancela listener antigo
     if (sessionUnsubscribe) {
         sessionUnsubscribe();
     }
 
     const sessionRef = doc(db, `tindecisos-sessions/${sessionId}`);
-    
+
     sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
         if (!docSnap.exists()) {
             showError("A sessão foi encerrada ou não existe mais.");
             leaveSession();
             return;
         }
-        
+
         sessionData = docSnap.data();
         console.log("Dados da sessão atualizados:", sessionData);
-        
-        // Atualiza o ID do usuário no Lobby (útil para debug)
-        if(elements.lobbyUserId) {
-             elements.lobbyUserId.textContent = `Seu ID: ${userId}`;
-        }
 
-        // --- Roteamento de Tela baseado no Estado da Sessão ---
         const currentScreen = document.querySelector('.screen.active');
         const currentScreenId = currentScreen ? currentScreen.id : null;
 
 
-        // 1. Ambos jogadores terminaram? Mostrar Resultados.
+        // --- 1) RESULTADOS ---
         if (sessionData.player1Done && sessionData.player2Done) {
             if (currentScreenId !== 'results-screen') {
                 showResults();
@@ -342,40 +336,53 @@ function listenToSession(sessionId) {
             return;
         }
 
-        // 2. O swipe está em progresso? (Categoria escolhida)
+
+        // --- 2) SWIPE EM ANDAMENTO (categoria já escolhida) ---
         if (sessionData.categoryName) {
-            // Se a tela de swipe ainda não estiver ativa, mostre-a.
+
+            // GUARDA: se o array ainda não sincronizou
+            if (!sessionData.itemsWithVotes || sessionData.itemsWithVotes.length === 0) {
+                console.warn("Categoria já setada mas items ainda não chegaram no snapshot");
+                return;
+            }
+
             if (currentScreenId !== 'swipe-screen') {
                 switchScreen('swipe');
-                showNextCard(); // Carrega o card correto
+                showNextCard();
             }
-            // (Se já estiver ativa, não faz nada, deixa o jogador deslizar)
             return;
         }
 
-        // 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
+
+        // --- 3) JOINER ENTROU — ir pra seleção de categoria (CRIADOR) ou LOBBY (JOGADOR 2) ---
         if (sessionData.joinerId) {
-            // Jogador 2 entrou. Se eu sou o criador, vou para a seleção de categoria.
+
+            // GUARDA: não entrar na seleção antes do appData estar carregado
+            if (!appData || Object.keys(appData).length === 0) {
+                console.warn("appData ainda não carregou — aguardando...");
+                return;
+            }
+
             if (isCreator) {
                 if (currentScreenId !== 'category-select-screen') {
                     renderCategorySelection();
                     switchScreen('category-select-screen');
                 }
             } else {
-                // Se eu sou o jogador 2, continuo no lobby esperando o criador escolher.
                 if (currentScreenId !== 'lobby-screen') {
                     switchScreen('lobby');
                 }
-                updateLobbyStatus(true); // true = jogador 2 conectado
+                updateLobbyStatus(true);
             }
             return;
         }
 
-        // 4. Ninguém entrou ainda, ambos aguardam no Lobby.
+
+        // --- 4) LOBBY ESPERANDO JOINER ---
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
         }
-        updateLobbyStatus(false); // false = aguardando
+        updateLobbyStatus(false);
     });
 }
 
