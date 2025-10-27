@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Fonte Inter do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <title>Tindecisos</title>
+    
+    <!-- SDKs do Firebase (NOVOS) -->
+    <script type="module">
+        // Importar os serviços do Firebase necessários
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Configuração do Firebase ---
+        
+        let db, auth, userId, appId;
+        let sessionUnsubscribe = null; // Para limpar o listener do Firestore
+        
+        // Estado da sessão do jogo
+        let currentSessionId = null;
+        let isCreator = false;
+        let sessionData = null; // Cópia local dos dados da sessão
+        let currentCategoryKey = null; // Categoria sendo gerenciada
+        let currentEditIndex = null; // Índice do item sendo editado
+
+        // --- Lista de Usuários Autorizados ---
+        const allowedEmails = [
+            "jeffersonsenarn@gmai.com",       // <-- TROQUE PELO SEU E-MAIL
+            "jessicaminern@gmail.com",          // <-- COLOQUE OS E-MAILS REAIS AQUI
+            "jeffersonwillamern@gmail.com"
+        ];
+
+        // --- Elementos de UI Globais ---
+        // (Serão inicializados no DOMContentLoaded)
+        let screens = {};
+        let elements = {};
+        let buttons = {};
+
+        // --- Dados Locais (para criar novas sessões) ---
+        // (O CRUD ainda edita estes dados)
+        let appData = {};
+        const defaultData = {
+            "Hobbies": [
+                { name: "Ler 📚", image: "https://placehold.co/400x250/A9D8E5/333?text=Ler" },
+                { name: "Correr 🏃", image: "https://placehold.co/400x250/C1E1C1/333?text=Correr" },
+                { name: "Cozinhar 🍳", image: "https://placehold.co/400x250/FFDDC1/333?text=Cozinhar" },
+                { name: "Viajar ✈️", image: "https://placehold.co/400x250/D4A5A5/333?text=Viajar" },
+                { name: "Tocar Violão 🎸", image: "https://placehold.co/400x250/F0E68C/333?text=Tocar+Viol%C3%A3o" }
+            ],
+            "Comidas": [
+                { name: "Pizza 🍕", image: "https://placehold.co/400x250/E5A9A9/333?text=Pizza" },
+                { name: "Hambúrguer 🍔", image: "https://placehold.co/400x250/E5C2A9/333?text=Hamb%C3%BArguer" },
+                { name: "Sushi 🍣", image: "https://placehold.co/400x250/A9E5E0/333?text=Sushi" },
+                { name: "Salada 🥗", image: "https://placehold.co/400x250/A9E5B2/333?text=Salada" },
+                { name: "Churrasco 🥩", image: "https://placehold.co/400x250/E5A9C2/333?text=Churrasco" }
+            ]
+        };
+        
+        // --- Funções de Persistência (AGORA COM FIRESTORE) ---
+        
+        /**
+         * Ouve as mudanças nos dados do aplicativo (listas) do Firestore.
+         * Esta função substitui o antigo loadLocalData.
+         */
+        function listenToAppData() {
+            const appDataRef = doc(db, "app-data", "lists");
+
+            onSnapshot(appDataRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    appData = docSnap.data();
+                    console.log("Dados de listas sincronizados do Firestore:", appData);
+                } else {
+                    // Se o documento não existir, cria com os dados padrão
+                    console.log("Nenhum dado de lista encontrado no Firestore. Criando com dados padrão...");
+                    appData = JSON.parse(JSON.stringify(defaultData));
+                    saveAppData(); // Salva os dados padrão no Firestore
+                }
+            });
+        }
+
+        /**
+         * Salva o objeto appData inteiro no Firestore.
+         * Esta função substitui o antigo saveLocalData.
+         */
+        async function saveAppData() {
+            const appDataRef = doc(db, "app-data", "lists");
+            try {
+                await setDoc(appDataRef, appData);
+            } catch (error) {
+                console.error("Erro ao salvar dados das listas no Firestore:", error);
+                showError("Erro ao sincronizar listas.");
+            }
+        }
+
+
+        // --- Inicialização do App ---
+        async function initializeAppFirebase() {
+            try {
+                // INSERIDO: Configuração do Firebase fornecida pelo usuário
+                const firebaseConfig = {
+                  apiKey: "AIzaSyAOnIjKkkLNjIHUgMv-db2mpaf6L8fIOu0",
+                  authDomain: "foodmatchweb-bc022.firebaseapp.com",
+                  projectId: "foodmatchweb-bc022",
+                  storageBucket: "foodmatchweb-bc022.firebasestorage.app",
+                  messagingSenderId: "305626837631",
+                  appId: "1:305626837631:web:9cc0febda7790d3181454a"
+                };
+
+                // INSERIDO: Usa o projectId como o appId para os caminhos do Firestore
+                appId = firebaseConfig.projectId;
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug'); // Para depuração
+
+                // Inicia o listener para os dados do app (listas)
+                listenToAppData();
+
+                // Autenticar o usuário
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // Verifica se o e-mail do usuário está na lista de permitidos
+                        if (allowedEmails.includes(user.email)) {
+                            userId = user.uid;
+                            console.log("Usuário autorizado autenticado:", user.email, "| UserID:", userId);
+                            elements.loadingMessage.style.display = 'none';
+                            switchScreen('home'); // Vai para a tela principal
+                        } else {
+                            // Se não for um usuário permitido, desloga e mostra erro
+                            console.warn("Usuário não autorizado tentou login:", user.email);
+                            await signOut(auth);
+                            showError("Você não tem permissão para acessar este app.");
+                            switchScreen('login'); // Mostra a tela de login com a mensagem de erro
+                        }
+                    } else {
+                        // Nenhum usuário logado, mostrar a tela de login
+                        console.log("Nenhum usuário logado. Mostrando tela de login.");
+                        elements.loadingMessage.style.display = 'none';
+                        switchScreen('login');
+                    }
+                });
+
+            } catch (e) {
+                console.error("Erro ao inicializar o Firebase:", e);
+                showError("Erro fatal ao carregar o app. Verifique o console.");
+            }
+        }
+
+        // --- Função de Login com E-mail e Senha ---
+        async function handleLogin() {
+            const email = elements.emailInput.value.trim();
+            const password = elements.passwordInput.value;
+
+            if (!email || !password) {
+                showError("Por favor, preencha e-mail e senha.");
+                return;
+            }
+
+            elements.loadingMessage.textContent = "Autenticando...";
+            elements.loadingMessage.style.display = 'block';
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // O onAuthStateChanged cuidará do resto
+            } catch (error) {
+                console.error("Erro no login:", error);
+                showError("E-mail ou senha incorretos. Tente novamente.");
+            }
+        }
+        
+        // --- Funções de Navegação e UI ---
+        
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(screen => {
+                screen.classList.remove('active');
+            });
+            if (screens[screenName]) {
+                screens[screenName].classList.add('active');
+            }
+        }
+        
+        function showError(message) {
+            const errorElement = document.querySelector('.screen.active .error-message');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            } else { // Fallback para a tela de loading
+                elements.loadingMessage.textContent = message;
+            }
+        }
+
+        // --- Lógica Principal da Sessão (NOVO) ---
+
+        /**
+         * Cria uma nova sessão no Firestore.
+         */
+        async function createSession() {
+            isCreator = true;
+            // Gera um ID de sessão curto e amigável
+            currentSessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            elements.loadingMessage.textContent = `Criando sessão ${currentSessionId}...`;
+            elements.loadingMessage.style.display = 'block';
+
+            try {
+                // Caminho simplificado para a coleção de sessões
+                const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+                
+                // Estrutura de dados inicial da sessão
+                const newSessionData = {
+                    creatorId: userId,
+                    joinerId: null,
+                    categoryName: null, // Será definido pelo criador
+                    itemsWithVotes: [], // Será preenchido após escolher a categoria
+                    player1Index: 0, // Índice do criador
+                    player2Index: 0, // Índice do jogador 2
+                    player1Done: false,
+                    player2Done: false,
+                    createdAt: serverTimestamp()
+                };
+
+                await setDoc(sessionRef, newSessionData);
+                
+                // Oculta mensagem de loading
+                elements.loadingMessage.style.display = 'none';
+                
+                // Inicia o listener e vai para a seleção de categoria
+                listenToSession(currentSessionId);
+                renderCategorySelection();
+                switchScreen('categorySelect');
+
+            } catch (error) {
+                console.error("Erro ao criar sessão:", error);
+                showError(`Erro ao criar sessão. Tente novamente. ${error.message}`);
+                isCreator = false;
+                currentSessionId = null;
+            }
+        }
+
+        /**
+         * Entra em uma sessão existente no Firestore.
+         */
+        async function joinSession() {
+            const sessionIdToJoin = elements.sessionInput.value.trim().toUpperCase();
+            if (!sessionIdToJoin) {
+                showError("Por favor, insira um ID de sessão.");
+                return;
+            }
+            
+            elements.loadingMessage.textContent = `Entrando na sessão ${sessionIdToJoin}...`;
+            elements.loadingMessage.style.display = 'block';
+
+            try {
+                const sessionRef = doc(db, `tindecisos-sessions/${sessionIdToJoin}`);
+                const sessionDoc = await getDoc(sessionRef);
+
+                if (!sessionDoc.exists()) {
+                    showError("Sessão não encontrada. Verifique o ID.");
+                    elements.loadingMessage.style.display = 'none';
+                    return;
+                }
+
+                // Sessão encontrada, vamos entrar
+                isCreator = false;
+                currentSessionId = sessionIdToJoin;
+                
+                // Atualiza o documento da sessão com o ID do jogador 2
+                await updateDoc(sessionRef, {
+                    joinerId: userId
+                });
+                
+                elements.loadingMessage.style.display = 'none';
+
+                // Inicia o listener e vai para o Lobby
+                listenToSession(currentSessionId);
+                // (O listener cuidará de mover para a tela correta)
+
+            } catch (error) {
+                console.error("Erro ao entrar na sessão:", error);
+                showError(`Erro ao entrar na sessão. ${error.message}`);
+            }
+        }
+
+        /**
+         * Inicia o listener (onSnapshot) para a sessão atual.
+         * Este é o coração do app multiplayer.
+         */
+        function listenToSession(sessionId) {
+            // Se já houver um listener, cancela antes de criar um novo
+            if (sessionUnsubscribe) {
+                sessionUnsubscribe();
+            }
+
+            const sessionRef = doc(db, `tindecisos-sessions/${sessionId}`);
+            
+            sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
+                if (!docSnap.exists()) {
+                    showError("A sessão foi encerrada ou não existe mais.");
+                    leaveSession();
+                    return;
+                }
+                
+                sessionData = docSnap.data();
+                console.log("Dados da sessão atualizados:", sessionData);
+                
+                // Atualiza o ID do usuário no Lobby (útil para debug)
+                if(elements.lobbyUserId) {
+                     elements.lobbyUserId.textContent = `Seu ID: ${userId}`;
+                }
+
+                // --- Roteamento de Tela baseado no Estado da Sessão ---
+                const currentScreen = document.querySelector('.screen.active');
+                const currentScreenId = currentScreen ? currentScreen.id : null;
+
+
+                // 1. Ambos jogadores terminaram? Mostrar Resultados.
+                if (sessionData.player1Done && sessionData.player2Done) {
+                    if (currentScreenId !== 'results-screen') {
+                        showResults();
+                    }
+                    return;
+                }
+
+                // 2. O swipe está em progresso? (Categoria escolhida)
+                if (sessionData.categoryName) {
+                    // Se a tela de swipe ainda não estiver ativa, mostre-a.
+                    if (currentScreenId !== 'swipe-screen') {
+                        switchScreen('swipe');
+                        showNextCard(); // Carrega o card correto
+                    }
+                    // (Se já estiver ativa, não faz nada, deixa o jogador deslizar)
+                    return;
+                }
+
+                // 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
+                if (sessionData.joinerId) {
+                    // Estamos no lobby e o jogador 2 entrou
+                    if (currentScreenId !== 'lobby-screen' && currentScreenId !== 'category-select-screen') {
+                        switchScreen('lobby');
+                    }
+                    updateLobbyStatus(true); // true = jogador 2 conectado
+                    return;
+                }
+
+                // 4. Estamos no Lobby (Criador ainda não escolheu / Jogador 2 não entrou)
+                if (isCreator && !sessionData.categoryName) {
+                    // O criador está na tela de seleção de categoria
+                    if (currentScreenId !== 'category-select-screen') {
+                         renderCategorySelection();
+                         switchScreen('categorySelect');
+                    }
+                    return;
+                } else {
+                    // O jogador 2 está esperando
+                    if (currentScreenId !== 'lobby-screen') {
+                         switchScreen('lobby');
+                    }
+                    updateLobbyStatus(false); // false = aguardando
+                }
+            });
+        }
+
+        /**
+         * O Criador seleciona uma categoria e a salva na sessão.
+         */
+        async function selectCategoryForSession(categoryKey) {
+            if (!isCreator || !currentSessionId) return;
+            
+            // Pega os itens da lista local
+            const items = appData[categoryKey] || [];
+            
+            // Transforma os itens para a estrutura do Firestore
+            const itemsWithVotes = items.map(item => ({
+                ...item,
+                p1_vote: null, // null, 'like', 'dislike'
+                p2_vote: null
+            }));
+
+            try {
+                const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+                await updateDoc(sessionRef, {
+                    categoryName: categoryKey,
+                    itemsWithVotes: itemsWithVotes
+                });
+                
+                // O onSnapshot vai pegar essa mudança e mover ambos os jogadores
+                // para a tela de swipe (Lógica no listenToSession)
+                
+            } catch (error) {
+                console.error("Erro ao selecionar categoria:", error);
+                showError("Erro ao iniciar a sessão. Tente novamente.");
+            }
+        }
+        
+        /**
+         * Atualiza a UI do Lobby (aguardando jogador)
+         */
+        function updateLobbyStatus(isJoinerConnected) {
+            elements.sessionIdDisplay.textContent = currentSessionId;
+            elements.lobbyStatus.textContent = isJoinerConnected 
+                ? "Jogador 2 conectado! O criador está escolhendo a categoria..."
+                : "Aguardando outro jogador entrar...";
+        }
+
+        /**
+         * Limpa o estado da sessão e volta para casa.
+         */
+        function leaveSession() {
+            if (sessionUnsubscribe) {
+                sessionUnsubscribe(); // Para o listener
+                sessionUnsubscribe = null;
+            }
+
+            // Se o usuário é o criador da sessão, deleta o documento da sessão.
+            // Se for o jogador 2, apenas remove seu ID da sessão.
+            if (currentSessionId && sessionData) {
+                const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+                if (isCreator) {
+                    console.log("Criador saindo. Deletando sessão...");
+                    // Usamos deleteDoc para remover a sessão inteira.
+                    deleteDoc(sessionRef).catch(err => console.error("Erro ao deletar sessão:", err)); // Agora funciona, pois o import está correto.
+                } else {
+                    console.log("Jogador 2 saindo. Limpando joinerId...");
+                    // Apenas remove o ID do jogador 2, mantendo a sessão aberta.
+                    updateDoc(sessionRef, { joinerId: null }).catch(err => console.error("Erro ao sair da sessão:", err));
+                }
+            }
+
+            currentSessionId = null;
+            isCreator = false;
+            sessionData = null;
+            elements.loadingMessage.style.display = 'none';
+
+            // Limpa mensagens de erro
+            const errorMessages = document.querySelectorAll('.error-message');
+            errorMessages.forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+
+            switchScreen('home');
+        }
+
+        /**
+         * Renderiza a lista de categorias para o Criador escolher.
+         */
+        function renderCategorySelection() {
+            elements.categorySelectList.innerHTML = ''; // Limpa a lista
+            
+            Object.keys(appData).forEach(categoryKey => {
+                const card = document.createElement('div');
+                card.className = 'category-card-select'; // Estilo simples de botão
+                card.textContent = categoryKey;
+                card.dataset.category = categoryKey;
+                elements.categorySelectList.appendChild(card);
+            });
+            
+            // Adiciona listener (reutilizável)
+            if (!elements.categorySelectList.dataset.listenerAttached) {
+                elements.categorySelectList.addEventListener('click', (e) => {
+                    const category = e.target.closest('.category-card-select')?.dataset.category;
+                    if (category) {
+                        selectCategoryForSession(category);
+                    }
+                });
+                elements.categorySelectList.dataset.listenerAttached = 'true';
+            }
+        }
+
+
+        // --- Lógica de Swipe (Atualizada para Firebase) ---
+
+        /**
+         * Mostra o card correto baseado no progresso do jogador.
+         */
+        function showNextCard() {
+            if (!sessionData) return; // Guarda de segurança
+
+            // Determina qual índice usar (P1 ou P2)
+            const myIndex = isCreator ? sessionData.player1Index : sessionData.player2Index;
+            
+            if (myIndex < sessionData.itemsWithVotes.length) {
+                const item = sessionData.itemsWithVotes[myIndex];
+                
+                elements.itemName.textContent = item.name;
+                const imageUrl = item.image || `https://placehold.co/400x250/eee/ccc?text=${encodeURIComponent(item.name)}`;
+                elements.itemImage.src = imageUrl;
+                elements.itemImage.onerror = function() { 
+                    this.src = `https://placehold.co/400x250/eee/ccc?text=${encodeURIComponent(item.name)}`; 
+                };
+
+                elements.itemCard.className = 'card slide-in';
+                elements.itemCard.style.transform = '';
+                
+                setTimeout(() => {
+                    elements.itemCard.classList.remove('slide-in');
+                }, 20);
+            } else {
+                // O jogador terminou de deslizar
+                markPlayerAsDone();
+            }
+        }
+
+        /**
+         * Processa o swipe e salva no Firestore.
+         */
+        async function handleSwipe(action) {
+            if (isAnimating || !sessionData) return;
+
+            const myIndex = isCreator ? sessionData.player1Index : sessionData.player2Index;
+            // Se já tiver terminado, não faz nada
+            if (myIndex >= sessionData.itemsWithVotes.length) return; 
+
+            isAnimating = true;
+
+            const voteField = isCreator ? `p1_vote` : `p2_vote`;
+            const indexField = isCreator ? 'player1Index' : 'player2Index';
+            const nextIndex = myIndex + 1;
+
+            // Criar um objeto de atualização
+            // Usamos a notação de ponto para campos aninhados em arrays
+            // NOTA: Firestore mudou, agora precisamos atualizar o objeto inteiro ou usar caminhos
+            // Vamos tentar atualizar o item específico no array (isso é complexo)
+            // Abordagem mais simples: ler, modificar, escrever (mas arriscado)
+            // Abordagem correta: usar update com caminhos de campo
+            
+            // Cópia local para atualização
+            let updatedItems = [...sessionData.itemsWithVotes];
+            updatedItems[myIndex][voteField] = action;
+            
+            try {
+                const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+                await updateDoc(sessionRef, {
+                    itemsWithVotes: updatedItems, // Atualiza o array inteiro
+                    [indexField]: nextIndex        // Atualiza o índice
+                });
+                
+                // Animação de saída
+                elements.itemCard.style.transform = ''; 
+                elements.itemCard.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out'; 
+                elements.itemCard.classList.add(action === 'like' ? 'slide-out-right' : 'slide-out-left');
+
+                // O onSnapshot vai pegar a mudança no índice e chamar showNextCard
+                // Mas chamamos localmente para animação
+                setTimeout(() => {
+                    // O onSnapshot deve ter atualizado o sessionData
+                    // e chamado showNextCard. Se não, forçamos.
+                    if (screens.swipe.classList.contains('active')) {
+                         showNextCard();
+                    }
+                    isAnimating = false;
+                }, 400);
+
+            } catch (error) {
+                console.error("Erro ao salvar swipe:", error);
+                showError("Erro de conexão ao salvar voto.");
+                isAnimating = false;
+            }
+        }
+        
+        /**
+         * Marca o jogador como "pronto" no Firestore.
+         */
+        async function markPlayerAsDone() {
+             if (!sessionData) return;
+             
+             const doneField = isCreator ? 'player1Done' : 'player2Done';
+             
+             // Evita escritas desnecessárias
+             if (sessionData[doneField] === true) return;
+             
+             try {
+                const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+                await updateDoc(sessionRef, {
+                    [doneField]: true
+                });
+                
+                // O onSnapshot vai verificar se ambos estão prontos
+                // e mover para os resultados.
+                
+                // Mostra uma tela de espera
+                elements.itemName.textContent = "Aguardando o outro jogador...";
+                elements.itemImage.src = `https://placehold.co/400x250/eee/ccc?text=Aguardando...`;
+                elements.itemCard.className = 'card';
+                elements.itemCard.style.transform = 'none';
+
+             } catch (error) {
+                 console.error("Erro ao finalizar:", error);
+                 showError("Erro ao finalizar sua parte.");
+             }
+        }
+
+
+        /**
+         * Mostra a tela de resultados (calcula matches).
+         */
+        function showResults() {
+            elements.likedList.innerHTML = '';
+            let matchesFound = [];
+
+            if (sessionData && sessionData.itemsWithVotes) {
+                matchesFound = sessionData.itemsWithVotes.filter(item => 
+                    item.p1_vote === 'like' && item.p2_vote === 'like'
+                );
+            }
+
+            if (matchesFound.length > 0) {
+                elements.noMatchesMsg.style.display = 'none';
+                elements.likedList.style.display = 'block';
+
+                matchesFound.forEach(item => {
+                    const li = document.createElement('li');
+                    const img = document.createElement('img');
+                    const thumbUrl = item.image || `https://placehold.co/60x60/eee/ccc?text=...`;
+                    img.src = thumbUrl;
+                    img.alt = item.name;
+                    img.className = 'result-thumb';
+                    img.onerror = function() { this.src='https://placehold.co/60x60/eee/ccc?text=...'; };
+
+                    const span = document.createElement('span');
+                    span.textContent = item.name;
+                    
+                    li.appendChild(img);
+                    li.appendChild(span);
+                    elements.likedList.appendChild(li);
+                });
+            } else {
+                elements.noMatchesMsg.style.display = 'block';
+                elements.likedList.style.display = 'none';
+            }
+
+            switchScreen('results');
+        }
+        
+        
+        // --- Funções de Gerenciamento (CRUD Local) ---
+        
+        function showAddItemModal() {
+            elements.addItemModal.classList.add('active');
+            elements.itemNameInput.focus();
+        }
+
+        function renderManageList(categoryKey) {
+            elements.manageTitle.textContent = `Gerenciando "${categoryKey}"`;
+            elements.manageList.innerHTML = ''; // Limpa
+            
+            const items = appData[categoryKey];
+
+            if (items.length === 0) {
+                elements.manageList.innerHTML = '<p style="padding: 1rem; text-align: center; color: #777;">Nenhum item cadastrado.</p>';
+            }
+
+            items.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'manage-item';
+                const thumbUrl = item.image || `https://placehold.co/60x60/eee/ccc?text=...`;
+                
+                li.innerHTML = `
+                    <img src="${thumbUrl}" alt="${item.name}" class="manage-thumb" onerror="this.src='https://placehold.co/60x60/eee/ccc?text=...';">
+                    <span class="manage-item-name">${item.name}</span>
+                    <div class="manage-item-buttons">
+                        <button class="edit-btn" data-index="${index}" aria-label="Editar">✏️</button>
+                        <button class="delete-btn" data-index="${index}" aria-label="Excluir">❌</button>
+                    </div>
+                `;
+                elements.manageList.appendChild(li);
+            });
+            
+            // Adiciona o botão "Adicionar Novo" no final
+            const addButtonLi = document.createElement('li');
+            addButtonLi.innerHTML = `<button class="add-new-item-btn-list">Adicionar Novo Item +</button>`;
+            elements.manageList.appendChild(addButtonLi);
+        }
+
+        function openEditModal(index) {
+            currentEditIndex = index;
+            const item = appData[currentCategoryKey][index];
+            
+            elements.modalTitle.textContent = `Editar "${item.name}"`;
+            elements.itemNameInput.value = item.name;
+            elements.itemImageInput.value = item.image || '';
+            
+            showAddItemModal();
+        }
+
+        function deleteItem(index) {
+            // TODO: Adicionar um modal de confirmação customizado
+            const itemName = appData[currentCategoryKey][index].name;
+            appData[currentCategoryKey].splice(index, 1);
+            saveAppData(); // Salva no Firestore
+            renderManageList(currentCategoryKey); // Re-renderiza a lista
+            
+            // Mostra feedback na tela principal (home)
+            elements.addFeedback.textContent = `${itemName} foi excluído!`;
+            setTimeout(() => {
+                elements.addFeedback.textContent = '';
+            }, 2000);
+        }
+
+        /**
+         * Renderiza a lista de categorias para a tela de gerenciamento.
+         */
+        function renderManageCategoryList() {
+            elements.manageCategoryList.innerHTML = ''; // Limpa a lista
+            
+            Object.keys(appData).forEach(categoryKey => {
+                const card = document.createElement('div');
+                card.className = 'category-card-select';
+                card.textContent = `Gerenciar "${categoryKey}"`;
+                card.dataset.category = categoryKey;
+                elements.manageCategoryList.appendChild(card);
+            });
+            
+             // Adiciona o botão "Adicionar Nova Categoria"
+            const addButton = document.createElement('button');
+            addButton.id = 'add-new-category-btn';
+            addButton.className = 'manage-btn';
+            addButton.textContent = 'Adicionar Nova Categoria +';
+            elements.manageCategoryList.appendChild(addButton);
+            
+            // Adiciona listener (reutilizável)
+            if (!elements.manageCategoryList.dataset.listenerAttached) {
+                 elements.manageCategoryList.addEventListener('click', (e) => {
+                    const categoryCard = e.target.closest('.category-card-select');
+                    const addCategoryBtn = e.target.closest('#add-new-category-btn');
+
+                    if (categoryCard) {
+                        const category = categoryCard.dataset.category;
+                        if (category) {
+                            currentCategoryKey = category; // Define a categoria a ser gerenciada
+                            renderManageList(category);
+                            switchScreen('manageItems'); // Vai para a lista de itens
+                        }
+                    } else if (addCategoryBtn) {
+                        // Usar o modal genérico para adicionar categoria
+                        currentEditIndex = null;
+                        currentCategoryKey = null; // Indica que é uma *nova* categoria
+                        elements.modalTitle.textContent = `Adicionar Nova Categoria`;
+                        elements.itemNameInput.placeholder = 'Nome da Categoria (Ex: Filmes)';
+                        elements.itemImageInput.style.display = 'none'; // Esconde campo de imagem
+                        showAddItemModal();
+                    }
+                });
+                elements.manageCategoryList.dataset.listenerAttached = 'true';
+            }
+        }
+        
+        /**
+         * Adiciona ou Edita Categoria/Item (Função unificada)
+         */
+        function saveModalData() {
+            const newName = elements.itemNameInput.value.trim();
+            if (!newName) {
+                elements.itemNameInput.focus();
+                return;
+            }
+
+            if (currentCategoryKey === null) {
+                // Estamos ADICIONANDO UMA NOVA CATEGORIA
+                if (appData[newName]) {
+                     elements.addFeedback.textContent = `Categoria "${newName}" já existe!`;
+                } else {
+                    appData[newName] = []; // Cria nova categoria vazia
+                    saveAppData(); // Salva no Firestore
+                    elements.addFeedback.textContent = `Categoria "${newName}" adicionada!`;
+                    renderManageCategoryList(); // Atualiza a lista de categorias
+                }
+            } else {
+                // Estamos ADICIONANDO OU EDITANDO UM ITEM
+                const newImage = elements.itemImageInput.value.trim();
+                const newItem = {
+                    name: newName,
+                    image: newImage || null
+                };
+
+                if (currentEditIndex !== null) {
+                    // Editando item
+                    appData[currentCategoryKey][currentEditIndex] = newItem;
+                    elements.addFeedback.textContent = `${newName} foi atualizado!`;
+                } else {
+                    // Adicionando novo item
+                    appData[currentCategoryKey].push(newItem);
+                    elements.addFeedback.textContent = `${newName} foi adicionado!`;
+                }
+                saveAppData(); // Salva no Firestore
+                if (screens.manageItems.classList.contains('active')) {
+                     renderManageList(currentCategoryKey);
+                }
+            }
+            
+            setTimeout(() => {
+                elements.addFeedback.textContent = '';
+            }, 2000);
+
+            closeAddItemModal();
+        }
+        
+        /**
+         * Resetar o modal ao fechar (para modo Categoria/Item)
+         */
+        function closeAddItemModal() {
+            elements.addItemModal.classList.remove('active');
+            elements.itemNameInput.value = '';
+            elements.itemImageInput.value = '';
+            // Reseta o modal para o padrão (adicionar item)
+            elements.itemNameInput.placeholder = 'Nome (Ex: Tocar violão 🎸)';
+            elements.itemImageInput.style.display = 'block';
+            currentEditIndex = null;
+            // (currentCategoryKey é mantido)
+        }
+
+
+        // --- Funções de Drag (Arrastar) ---
+        let isDragging = false;
+        let startX = 0;
+        let currentX = 0;
+        let isAnimating = false;
+        const swipeThreshold = 100;
+
+        function getClientX(e) {
+            if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
+            if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
+            return e.clientX;
+        }
+
+        function dragStart(e) {
+            if (isAnimating || !sessionData) return;
+            const myIndex = isCreator ? sessionData.player1Index : sessionData.player2Index;
+            if (myIndex >= sessionData.itemsWithVotes.length) return; // Não arrasta se tiver terminado
+            
+            isDragging = true;
+            startX = getClientX(e);
+            currentX = startX;
+            elements.itemCard.style.transition = 'none';
+            elements.itemCard.style.cursor = 'grabbing';
+        }
+
+        function dragMove(e) {
+            if (!isDragging || isAnimating) return;
+            e.preventDefault(); 
+            currentX = getClientX(e);
+            const deltaX = currentX - startX;
+            elements.itemCard.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.1}deg)`;
+        }
+
+        function dragEnd(e) {
+            if (!isDragging || isAnimating) return;
+            isDragging = false;
+            const deltaX = currentX - startX;
+
+            elements.itemCard.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+            elements.itemCard.style.cursor = 'grab';
+
+            if (deltaX > swipeThreshold) {
+                handleSwipe('like');
+            } else if (deltaX < -swipeThreshold) {
+                handleSwipe('dislike');
+            } else {
+                elements.itemCard.style.transform = 'translateX(0) rotate(0)';
+            }
+            startX = 0;
+            currentX = 0;
+        }
+
+
+        // --- Inicialização do DOM ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Mapeia todas as telas
+            screens = {
+                login: document.getElementById('login-screen'),
+                home: document.getElementById('home-screen'),
+                categorySelect: document.getElementById('category-select-screen'),
+                lobby: document.getElementById('lobby-screen'),
+                swipe: document.getElementById('swipe-screen'),
+                results: document.getElementById('results-screen'),
+                manageCategory: document.getElementById('manage-category-screen'),
+                manageItems: document.getElementById('manage-items-screen'),
+                loading: document.getElementById('loading-screen') // Tela de loading
+            };
+            
+            // Mapeia botões
+            buttons = {
+                login: document.getElementById('login-btn'),
+                createSession: document.getElementById('create-session-btn'),
+                joinSession: document.getElementById('join-session-btn'),
+                openManage: document.getElementById('open-manage-btn'),
+                like: document.getElementById('like-btn'),
+                dislike: document.getElementById('dislike-btn'),
+                restart: document.getElementById('restart-btn'),
+                saveItem: document.getElementById('save-item-btn'),
+                cancelAdd: document.getElementById('cancel-add-btn'),
+                backToHomeFromManageCat: document.getElementById('back-to-home-from-manage-cat-btn'),
+                backToManageCat: document.getElementById('back-to-manage-cat-btn')
+            };
+
+            // Mapeia outros elementos
+            elements = {
+                emailInput: document.getElementById('email-input'),
+                passwordInput: document.getElementById('password-input'),
+                loadingMessage: document.getElementById('loading-message'),
+                sessionInput: document.getElementById('session-id-input'),
+                categorySelectList: document.getElementById('category-select-list'),
+                lobbyStatus: document.getElementById('lobby-status'),
+                sessionIdDisplay: document.getElementById('session-id-display'),
+                lobbyUserId: document.getElementById('lobby-user-id'),
+                itemCard: document.getElementById('item-card'),
+                itemImage: document.getElementById('item-image'),
+                itemName: document.getElementById('item-name'),
+                likedList: document.getElementById('liked-list'),
+                noMatchesMsg: document.getElementById('no-matches-msg'),
+                addFeedback: document.getElementById('add-feedback'),
+                addItemModal: document.getElementById('item-modal'),
+                modalTitle: document.getElementById('item-modal-title'),
+                itemNameInput: document.getElementById('item-name-input'),
+                itemImageInput: document.getElementById('item-image-input'),
+                manageCategoryList: document.getElementById('manage-category-list'),
+                manageList: document.getElementById('manage-list'),
+                manageTitle: document.getElementById('manage-title')
+            };
+
+            // --- Listeners de Eventos Globais ---
+            
+            // Tela de Login
+            buttons.login.addEventListener('click', handleLogin);
+            elements.emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+            elements.passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+            // Tela Inicial
+            buttons.createSession.addEventListener('click', createSession);
+            buttons.joinSession.addEventListener('click', joinSession);
+            buttons.openManage.addEventListener('click', () => {
+                renderManageCategoryList();
+                switchScreen('manageCategory');
+            });
+            
+            // Botões do Modal (Adicionar/Editar Item/Categoria)
+            buttons.saveItem.addEventListener('click', saveModalData); // Função unificada
+            buttons.cancelAdd.addEventListener('click', closeAddItemModal);
+            elements.addItemModal.addEventListener('click', (e) => {
+                if (e.target === elements.addItemModal) closeAddItemModal();
+            });
+            elements.itemNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveModalData(); });
+            elements.itemImageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveModalData(); });
+
+            // Botões de Swipe
+            buttons.like.addEventListener('click', () => handleSwipe('like'));
+            buttons.dislike.addEventListener('click', () => handleSwipe('dislike'));
+
+            // Botão "Recomeçar" (Tela de Resultados)
+            buttons.restart.addEventListener('click', leaveSession);
+            
+            // Botões de Navegação (Gerenciamento)
+            buttons.backToHomeFromManageCat.addEventListener('click', () => switchScreen('home'));
+            buttons.backToManageCat.addEventListener('click', () => switchScreen('manageCategory'));
+
+            // Listeners da Lista de Gerenciamento (Itens)
+            elements.manageList.addEventListener('click', (e) => {
+                const editButton = e.target.closest('.edit-btn');
+                const deleteButton = e.target.closest('.delete-btn');
+                const addButton = e.target.closest('.add-new-item-btn-list');
+
+                if (editButton) {
+                    const index = parseInt(editButton.dataset.index, 10);
+                    openEditModal(index);
+                    return;
+                }
+                if (deleteButton) {
+                    const index = parseInt(deleteButton.dataset.index, 10);
+                    deleteItem(index);
+                    return;
+                }
+                if (addButton) {
+                    const singular = currentCategoryKey.endsWith('s') ? currentCategoryKey.slice(0, -1) : currentCategoryKey;
+                    elements.modalTitle.textContent = `Adicionar Novo ${singular}`;
+                    currentEditIndex = null; 
+                    elements.itemNameInput.value = '';
+                    elements.itemImageInput.value = '';
+                    // Garante que o modal está no modo "item"
+                    elements.itemNameInput.placeholder = 'Nome (Ex: Tocar violão 🎸)';
+                    elements.itemImageInput.style.display = 'block';
+                    showAddItemModal();
+                }
+            });
+            
+
+            // --- Listeners para o Arraste (Drag) ---
+            elements.itemCard.addEventListener('mousedown', dragStart);
+            document.addEventListener('mousemove', dragMove); 
+            document.addEventListener('mouseup', dragEnd); 
+            elements.itemCard.addEventListener('touchstart', dragStart, { passive: false });
+            document.addEventListener('touchmove', dragMove, { passive: false }); 
+            document.addEventListener('touchend', dragEnd); 
+
+            // --- Inicialização ---
+            initializeAppFirebase();
+        });
+
+    </script>
+    
+    <!-- CSS (Estilos) -->
+    <style>
+        /* --- Reset Básico e Padrões --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
+        }
+
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Evita scroll da página */
+            background-color: #f4f4f9; /* Fundo cinza suave */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Contêiner Principal --- */
+        .app-container {
+            width: 100%;
+            height: 100%;
+            max-width: 420px; /* Limite de largura (ótimo para mobile-first) */
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Garante que nada transborde */
+            position: relative;
+        }
+        
+        /* Em telas maiores, mostra como um "celular" */
+        @media (min-width: 450px) {
+            .app-container {
+                max-height: 850px;
+                height: calc(100% - 40px);
+                margin: 20px auto;
+                border-radius: 24px;
+                border: 1px solid #e0e0e0;
+            }
+        }
+
+        /* --- Estrutura das Telas --- */
+        .screen {
+            display: none; /* Oculta todas as telas por padrão */
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 1.5rem;
+            overflow-y: auto; /* Permite scroll interno se necessário */
+            overflow-x: hidden;
+            background-color: #ffffff;
+            position: relative;
+        }
+
+        .screen.active {
+            display: flex; /* Mostra a tela ativa */
+        }
+
+        /* --- Tela de Login (NOVA) --- */
+        #login-screen {
+            justify-content: center;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .login-form {
+            width: 100%;
+            padding: 1.5rem;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            background: #fdfdfd;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .login-form input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+
+        .error-message {
+            color: #F44336;
+            font-weight: 600;
+            min-height: 1.2rem;
+        }
+        /* --- Tela Inicial (Home) - REFEITA --- */
+        #home-screen {
+            text-align: center;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        #home-screen h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 0;
+        }
+        
+        /* Contêiner para Ações da Sessão */
+        .session-controls {
+            width: 100%;
+            padding: 1.5rem;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            background: #fdfdfd;
+        }
+        
+        .session-controls h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        #session-id-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-family: inherit;
+            text-transform: uppercase;
+        }
+        
+        #session-id-input::placeholder {
+            text-transform: none;
+        }
+
+        .session-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        /* Botão de Gerenciar (agora na home) */
+        #open-manage-btn {
+            background-color: #6c757d;
+            color: white;
+            width: 100%;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+         #open-manage-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        /* Mensagem de Loading/Erro na Home */
+        #loading-message {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #555;
+            min-height: 1.2rem;
+            display: none; /* Começa escondido */
+        }
+        
+        /* Feedback de Adicionar/Excluir Item */
+         #add-feedback {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #4CAF50;
+            min-height: 1.2rem;
+            transition: color 0.3s ease;
+         }
+        
+
+        /* --- Tela de Seleção de Categoria (NOVA) --- */
+        #category-select-screen {
+            justify-content: flex-start;
+            text-align: center;
+        }
+        #category-select-screen h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+        #category-select-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+        .category-card-select {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .category-card-select:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            background-color: #fff;
+        }
+
+        /* --- Tela de Lobby (NOVA) --- */
+        #lobby-screen {
+            justify-content: center;
+            text-align: center;
+            gap: 1.5rem;
+        }
+        #lobby-screen h2 {
+            font-size: 1.75rem;
+        }
+        #session-id-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #007bff;
+            background: #f4f4f9;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px dashed #ccc;
+            letter-spacing: 2px;
+        }
+        #lobby-status {
+            font-size: 1.1rem;
+            color: #555;
+            min-height: 2.5rem;
+        }
+        #lobby-user-id {
+            font-size: 0.8rem;
+            color: #999;
+            word-break: break-all;
+        }
+
+        /* --- Tela de Swipe --- */
+        #swipe-screen {
+            justify-content: center; /* Centraliza verticalmente o grupo */
+            align-items: center; /* Centraliza horizontalmente */
+            text-align: center;
+            padding: 1.5rem;
+            gap: 2rem; /* Espaço entre card e botões */
+            overflow: hidden; /* Impede que o card vaze durante a animação */
+        }
+        .card-container {
+            width: 100%;
+            height: 60%; /* Ocupa 60% da altura da tela */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative; /* Para animações */
+            cursor: grab;
+            transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* Para o "soltar" */
+        }
+        
+        /* Animações de entrada/saída */
+        .card.slide-in {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .card.slide-out-left {
+            opacity: 0;
+            transform: translateX(-150%) rotate(-30deg) !important;
+        }
+        .card.slide-out-right {
+            opacity: 0;
+            transform: translateX(150%) rotate(30deg) !important;
+        }
+
+        #item-image {
+            width: 100%;
+            height: 100%; /* Ocupa todo o espaço do card */
+            object-fit: cover; /* Garante que a imagem cubra */
+        }
+        #item-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            font-size: 1.75rem;
+            font-weight: 700;
+            padding: 2rem 1.5rem 1.5rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .swipe-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            width: 100%;
+        }
+        .swipe-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+            background-color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .swipe-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+        }
+        #dislike-btn:hover {
+            background-color: #FFF0F0;
+            border-color: #FFCDCD;
+        }
+        #like-btn:hover {
+            background-color: #F0FFF3;
+            border-color: #C1E1C1;
+        }
+
+        /* --- Tela de Resultados --- */
+        #results-screen {
+            justify-content: flex-start;
+            text-align: center;
+        }
+        #results-screen h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+        #no-matches-msg {
+            font-size: 1.2rem;
+            color: #777;
+        }
+        #liked-list {
+            list-style-type: none;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        #liked-list li {
+            display: flex;
+            align-items: center;
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 0.75rem;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .result-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 1rem;
+            background-color: #eee;
+        }
+        #liked-list li span {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        #restart-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: auto; /* Empurra para baixo */
+        }
+        #restart-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- Tela de Gerenciamento (REFEITA) --- */
+        #manage-category-screen {
+            justify-content: flex-start;
+            text-align: center;
+        }
+        #manage-category-screen h2 {
+             font-size: 1.75rem;
+             margin-bottom: 1.5rem;
+        }
+        #manage-category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+        
+        #manage-items-screen {
+            justify-content: flex-start;
+        }
+        #manage-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        #manage-list {
+            list-style-type: none;
+            width: 100%;
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        /* Botão para adicionar item */
+        .add-new-item-btn-list {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: #f9f9f9;
+            border: none;
+            border-top: 1px solid #eee;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #007bff;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+         .add-new-item-btn-list:hover {
+            background: #f0f8ff;
+         }
+
+        .manage-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .manage-item:last-child {
+            border-bottom: none;
+        }
+        .manage-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-right: 1rem;
+            background-color: #eee;
+        }
+        .manage-item-name {
+            flex-grow: 1;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+        }
+        .manage-item-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .edit-btn, .delete-btn {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: transform 0.2s ease;
+        }
+        .edit-btn:hover, .delete-btn:hover {
+            transform: scale(1.2);
+        }
+
+        /* Botão de Voltar (NOVO) */
+        #back-to-home-from-manage-cat-btn,
+        #back-to-manage-cat-btn {
+            background-color: #6c757d; /* Cinza escuro */
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: auto; /* Empurra para baixo */
+        }
+         #back-to-home-from-manage-cat-btn:hover,
+         #back-to-manage-cat-btn:hover {
+            background-color: #5a6268;
+         }
+         
+        /* Botão de Adicionar Nova Categoria */
+        #add-new-category-btn {
+             margin-top: 1rem;
+        }
+
+        /* --- Estilos Gerais de Botões --- */
+        .start-btn, .manage-btn {
+            background-color: #007bff; /* Azul */
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .start-btn:hover, .manage-btn:hover {
+            background-color: #0056b3;
+        }
+        .secondary-btn {
+            background-color: #6c757d; /* Cinza */
+        }
+        .secondary-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* --- Modal (Popup) --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-content h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+    </style>
+    <!-- Fim do <script> e <style> -->
+</head>
+<body style="font-family: Inter, sans-serif;">
+
+    <!-- O contêiner principal que centraliza o app -->
+    <div class="app-container">
+        
+        <!-- Tela de Loading Inicial (NOVA) -->
+        <div class="screen active" id="loading-screen">
+            <h1 style="font-size: 3.5rem; font-weight: 800; color: #333; margin-bottom: 1.5rem;">Tindecisos</h1>
+            <p id="loading-message" style="font-size: 1.1rem; color: #555;">Conectando...</p>
+        </div>
+
+        <!-- Tela de Login (NOVA) -->
+        <div class="screen" id="login-screen">
+            <h1>Tindecisos</h1>
+            <div class="login-form">
+                <h2>Login</h2>
+                <input type="email" id="email-input" placeholder="Seu e-mail" autocomplete="email">
+                <input type="password" id="password-input" placeholder="Sua senha" autocomplete="current-password">
+                <button id="login-btn" class="start-btn">Entrar</button>
+                <p class="error-message" style="display: none;"></p>
+            </div>
+        </div>
+
+
+        <!-- Tela 1: Inicial (Sessão) - REFEITA -->
+        <div class="screen" id="home-screen">
+            <h1>Tindecisos</h1>
+            
+            <div class="session-controls">
+                <h2>Entrar em Sessão</h2>
+                <input type="text" id="session-id-input" placeholder="ID da Sessão (6 letras)">
+                <div class="session-buttons">
+                    <button id="join-session-btn" class="start-btn" style="background-color: #28a745;">Entrar</button> <!-- Verde -->
+                    <button id="create-session-btn" class="start-btn">Criar Nova Sessão</button> <!-- Azul Padrão -->
+                </div>
+            </div>
+            
+            <button id="open-manage-btn">Gerenciar Minhas Listas</button>
+            <p class="error-message" id="home-error-message" style="display: none;"></p>
+            
+            <p id="add-feedback"></p>
+        </div>
+
+        <!-- Tela 2: Seleção de Categoria (NOVA, para o Criador) -->
+        <div class="screen" id="category-select-screen">
+            <h2>Escolha uma Categoria</h2>
+            <div id="category-select-list">
+                <!-- Lista de categorias preenchida por JS -->
+            </div>
+            <!-- (Botão de voltar pode ser adicionado aqui) -->
+        </div>
+        
+        <!-- Tela 3: Lobby (NOVA, para aguardar) -->
+        <div class="screen" id="lobby-screen">
+            <h2>ID da Sessão:</h2>
+            <p id="session-id-display">ABC123</p>
+            <p>Compartilhe este ID com o outro jogador.</p>
+            <p id="lobby-status">Aguardando jogador 2...</p>
+            <p id="lobby-user-id" style="margin-top: 2rem;"></p>
+            <!-- (Botão de cancelar pode ser adicionado aqui) -->
+        </div>
+
+
+        <!-- Tela 4: Swipe (Antiga Tela 2) -->
+        <div class="screen" id="swipe-screen">
+            <div class="card-container">
+                <div class="card" id="item-card">
+                    <img id="item-image" src="https://placehold.co/400x250/eee/ccc?text=Carregando..." alt="Imagem do item">
+                    <h3 id="item-name">Carregando...</h3>
+                </div>
+            </div>
+            
+            <!-- Botões de Like/Dislike (RE-ADICIONADOS) -->
+            <div class="swipe-buttons">
+                <button id="dislike-btn" class="swipe-btn" aria-label="Descartar">❌</button>
+                <button id="like-btn" class="swipe-btn" aria-label="Curtir">❤️</button>
+            </div>
+        </div>
+
+        <!-- Tela 5: Resultados (Antiga Tela 3) (RE-ADICIONADA) -->
+        <div class="screen" id="results-screen">
+            <h2>Match Encontrado! 🎉</h2>
+            <p id="no-matches-msg" style="display: none;">Nenhuma combinação encontrada 😢</p>
+            
+            <ul id="liked-list">
+                <!-- Lista de matches preenchida por JS -->
+            </ul>
+
+            <button id="restart-btn">Sair da Sessão</button>
+        </div>
+
+        <!-- Tela 6: Gerenciamento - Categorias -->
+        <div class="screen" id="manage-category-screen">
+            <h2>Gerenciar Listas</h2>
+            <p style="font-size: 0.9rem; color: #777; margin-bottom: 1.5rem;">(Estas listas são sincronizadas entre todos os usuários)</p>
+            <div id="manage-category-list">
+                <!-- Lista de categorias para gerenciar, preenchida por JS -->
+            </div>
+            <button id="back-to-home-from-manage-cat-btn" style="margin-top: 1.5rem;">Voltar</button>
+        </div>
+        
+        <!-- Tela 7: Gerenciamento - Itens -->
+        <div class="screen" id="manage-items-screen">
+            <h2 id="manage-title">Gerenciar Itens</h2>
+            <ul id="manage-list">
+                <!-- Itens da lista serão preenchidos pelo JavaScript -->
+                 <!-- Botão de adicionar item é adicionado via JS -->
+            </ul>
+            <button id="back-to-manage-cat-btn">Voltar</button>
+        </div>
+
+    </div> <!-- Fim do app-container -->
+
+    <!-- Modal (Popup) para Adicionar/Editar Itens/Categorias -->
+    <div id="item-modal" class="modal-overlay">
+        <div class="modal-content">
+            <!-- Título do modal agora é dinâmico -->
+            <h3 id="item-modal-title">Adicionar Novo Item</h3>
+            <input type="text" id="item-name-input" placeholder="Nome (Ex: Tocar violão 🎸)">
+            <input type="text" id="item-image-input" placeholder="URL da Imagem (Opcional)">
+            <div class="modal-buttons">
+                <button id="cancel-add-btn" class="secondary-btn manage-btn">Cancelar</button>
+                <button id="save-item-btn" class="manage-btn">Salvar</button>
+            </div>
+        </div> <!-- Fim do modal-content -->
+    </div> <!-- Fim do item-modal -->
+
+</body>
+</html>
