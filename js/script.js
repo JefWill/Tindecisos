@@ -230,8 +230,16 @@ function createSession() {
         return;
     }
     
+    // Força renderização e mudança de tela
+    console.log("Renderizando categorias:", Object.keys(appData));
     renderCategorySelection();
     switchScreen('category-select-screen');
+    
+    // DEBUG: Log para verificar
+    setTimeout(() => {
+        console.log("Tela ativa:", document.querySelector('.screen.active')?.id);
+        console.log("Categorias renderizadas:", elements.categorySelectList.children.length);
+    }, 100);
 }
 
 /**
@@ -409,8 +417,11 @@ function renderCategorySelection() {
     
     if (!appData || Object.keys(appData).length === 0) {
         elements.categorySelectList.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-secondary);">Carregando categorias...</p>';
+        console.warn("renderCategorySelection: appData está vazio");
         return;
     }
+    
+    console.log("Renderizando categorias:", Object.keys(appData));
     
     Object.keys(appData).forEach(categoryKey => {
         const card = document.createElement('div');
@@ -418,12 +429,16 @@ function renderCategorySelection() {
         card.textContent = categoryKey;
         card.dataset.category = categoryKey;
         elements.categorySelectList.appendChild(card);
+        console.log("Categoria adicionada:", categoryKey);
     });
+    
+    console.log("Total de categorias renderizadas:", elements.categorySelectList.children.length);
     
     if (!elements.categorySelectList.dataset.listenerAttached) {
         elements.categorySelectList.addEventListener('click', (e) => {
             const category = e.target.closest('.category-card-select')?.dataset.category;
             if (category) {
+                console.log("Categoria selecionada:", category);
                 selectCategoryAndCreateSession(category);
             }
         });

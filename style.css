@@ -1,21 +1,20 @@
 /* --- :root (Variáveis da Nova Paleta de Cores) --- */
 :root {
-    --primary: #007AFF;         /* Azul vibrante (Apple Blue) */
-    --primary-dark: #0056b3;      /* Azul mais escuro (Hover) */
-    --secondary: #6C757D;        /* Cinza neutro (Botões secundários) */
-    --secondary-dark: #5a6268;   /* Cinza (Hover) */
+    --primary: #007AFF;
+    --primary-dark: #0056b3;
+    --secondary: #6C757D;
+    --secondary-dark: #5a6268;
     
-    --success: #28a745;         /* Verde para "Like" */
-    --danger: #dc3545;          /* Vermelho para "Dislike" */
+    --success: #28a745;
+    --danger: #dc3545;
     
-    --text-primary: #1A1B2F;    /* Quase preto (para títulos) */
-    --text-secondary: #5A5F7D;  /* Cinza-azulado (para parágrafos) */
+    --text-primary: #1A1B2F;
+    --text-secondary: #5A5F7D;
     
-    --background: #F7F9FC;      /* Fundo do app (cinza muito claro) */
-    --surface: #FFFFFF;         /* Fundo de cards/modals (branco) */
-    --border: #E8EBF2;          /* Cor da borda sutil */
+    --background: #F7F9FC;
+    --surface: #FFFFFF;
+    --border: #E8EBF2;
 
-    /* Sombras Modernas */
     --shadow-sm: 0 2px 4px rgba(0,0,0,0.02), 0 5px 15px rgba(0,0,0,0.05);
     --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
     --shadow-btn: 0 4px 14px 0 rgba(0, 122, 255, 0.3);
@@ -33,7 +32,7 @@ html, body {
     height: 100%;
     width: 100%;
     overflow: hidden;
-    background-color: var(--background); /* Aplica fundo moderno */
+    background-color: var(--background);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -47,7 +46,7 @@ html, body {
     height: 100%;
     max-width: 420px;
     margin: 0 auto;
-    background-color: var(--surface); /* Fundo branco para o "app" */
+    background-color: var(--surface);
     box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
@@ -75,11 +74,16 @@ html, body {
     overflow-y: auto;
     overflow-x: hidden;
     background-color: var(--surface);
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 .screen.active {
-    display: flex;
+    display: flex !important;
+    z-index: 1;
 }
 
 /* --- Títulos e Textos --- */
@@ -89,19 +93,19 @@ h1, h2, h3 {
     line-height: 1.2;
 }
 
-/* --- Estilos Gerais de Botões (Modernizados) --- */
+/* --- Estilos Gerais de Botões --- */
 .start-btn, .manage-btn {
     background-color: var(--primary);
     color: white;
     border: none;
-    padding: 0.9rem 1rem; /* Mais elegante */
+    padding: 0.9rem 1rem;
     font-size: 1.1rem;
     font-weight: 600;
-    border-radius: 12px; /* Mais suave */
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
-    box-shadow: var(--shadow-btn); /* Sombra que "eleva" o botão */
+    box-shadow: var(--shadow-btn);
 }
 .start-btn:hover, .manage-btn:hover {
     background-color: var(--primary-dark);
@@ -109,7 +113,6 @@ h1, h2, h3 {
     transform: translateY(-1px);
 }
 
-/* Botão Secundário (Estilo "Ghost"/Vazado) */
 .secondary-btn {
     background-color: var(--surface);
     color: var(--primary);
@@ -124,7 +127,7 @@ h1, h2, h3 {
     transform: none;
 }
 
-/* --- Estilos Gerais de Inputs (Modernizados) --- */
+/* --- Estilos Gerais de Inputs --- */
 input[type="text"],
 input[type="email"],
 input[type="password"] {
@@ -158,6 +161,7 @@ input[type="password"]:focus {
     font-weight: 600;
     min-height: 1.2rem;
 }
+
 /* --- Tela de Login --- */
 #login-screen {
     justify-content: center;
@@ -181,7 +185,6 @@ input[type="password"]:focus {
     justify-content: center;
     gap: 1.5rem;
 }
-/* Feedback de usuário logado */
 #user-status {
     font-size: 0.9rem;
     font-weight: 500;
@@ -189,13 +192,13 @@ input[type="password"]:focus {
     background-color: var(--background);
     padding: 0.5rem 1rem;
     border-radius: 8px;
-    display: inline-block; /* Para o padding funcionar bem */
+    display: inline-block;
 }
 .session-controls {
     width: 100%;
     padding: 1.5rem;
     border: 1px solid var(--border);
-    border-radius: 16px; /* Mais arredondado */
+    border-radius: 16px;
     background: var(--surface);
 }
 .session-controls h2 {
@@ -231,24 +234,28 @@ input[type="password"]:focus {
     transition: color 0.3s ease;
 }
 
-/* --- Tela de Seleção de Categoria --- */
+/* --- Tela de Seleção de Categoria (CRÍTICO) --- */
 #category-select-screen {
     justify-content: flex-start;
     text-align: center;
+    padding: 2rem 1.5rem !important; /* Força padding */
 }
 #category-select-screen h2 {
     font-size: 1.75rem;
     margin-bottom: 1.5rem;
+    color: var(--text-primary);
 }
 #category-select-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;
     width: 100%;
+    flex: 1;
+    overflow-y: auto;
 }
 .category-card-select {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 2px solid var(--border);
     border-radius: 16px;
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
@@ -256,13 +263,21 @@ input[type="password"]:focus {
     font-weight: 600;
     color: var(--text-primary);
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.2s ease;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .category-card-select:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-md);
-    background-color: var(--surface);
+    background-color: var(--background);
     color: var(--primary);
+    border-color: var(--primary);
+}
+.category-card-select:active {
+    transform: translateY(-2px);
 }
 
 /* --- Tela de Lobby --- */
@@ -277,7 +292,7 @@ input[type="password"]:focus {
 #session-id-display {
     font-size: 2.5rem;
     font-weight: 700;
-    color: var(--primary); /* Azul */
+    color: var(--primary);
     background: var(--background);
     padding: 1rem;
     border-radius: 8px;
@@ -318,7 +333,7 @@ input[type="password"]:focus {
     height: 100%;
     background-color: var(--surface);
     border-radius: 20px;
-    box-shadow: var(--shadow-md); /* Sombra mais suave */
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -326,10 +341,18 @@ input[type="password"]:focus {
     cursor: grab;
     transition: transform 0.4s ease-out, opacity 0.4s ease-out;
 }
-/* Animações de entrada/saída (sem alteração) */
-.card.slide-in { opacity: 0; transform: scale(0.95); }
-.card.slide-out-left { opacity: 0; transform: translateX(-150%) rotate(-30deg) !important; }
-.card.slide-out-right { opacity: 0; transform: translateX(150%) rotate(30deg) !important; }
+.card.slide-in { 
+    opacity: 0; 
+    transform: scale(0.95); 
+}
+.card.slide-out-left { 
+    opacity: 0; 
+    transform: translateX(-150%) rotate(-30deg) !important; 
+}
+.card.slide-out-right { 
+    opacity: 0; 
+    transform: translateX(150%) rotate(30deg) !important; 
+}
 
 #item-image {
     width: 100%;
@@ -367,22 +390,21 @@ input[type="password"]:focus {
     display: flex;
     justify-content: center;
     align-items: center;
-    color: #999; /* Cor base neutra */
+    color: #999;
 }
 .swipe-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
 }
-/* Cores corretas (UX) */
 #dislike-btn:hover {
     background-color: #FFF0F0;
     border-color: #FFCDCD;
-    color: var(--danger); /* Vermelho */
+    color: var(--danger);
 }
 #like-btn:hover {
     background-color: #F0FFF3;
     border-color: #C1E1C1;
-    color: var(--success); /* Verde */
+    color: var(--success);
 }
 
 /* --- Tela de Resultados --- */
@@ -429,8 +451,8 @@ input[type="password"]:focus {
     color: var(--text-primary);
 }
 #restart-btn {
-    background-color: var(--primary); /* Azul */
-    margin-top: auto; /* Empurra para baixo */
+    background-color: var(--primary);
+    margin-top: auto;
 }
 #restart-btn:hover {
     background-color: var(--primary-dark);
@@ -469,7 +491,6 @@ input[type="password"]:focus {
     border-radius: 8px;
     overflow: hidden;
 }
-/* Botão para adicionar item */
 .add-new-item-btn-list {
     display: block;
     width: 100%;
@@ -479,12 +500,12 @@ input[type="password"]:focus {
     border-top: 1px solid var(--border);
     font-size: 1.1rem;
     font-weight: 600;
-    color: var(--primary); /* Azul */
+    color: var(--primary);
     cursor: pointer;
     transition: background 0.2s ease;
 }
  .add-new-item-btn-list:hover {
-    background: #eaf5ff; /* Azul bem claro */
+    background: #eaf5ff;
  }
 .manage-item {
     display: flex;
@@ -530,20 +551,18 @@ input[type="password"]:focus {
     transform: scale(1.2);
     color: var(--danger);
 }
-/* Botões de Voltar (Secundários) */
 #back-to-home-from-manage-cat-btn,
 #back-to-manage-cat-btn {
     background-color: var(--secondary);
     color: white;
     box-shadow: none;
-    margin-top: auto; /* Empurra para baixo */
+    margin-top: auto;
 }
  #back-to-home-from-manage-cat-btn:hover,
  #back-to-manage-cat-btn:hover {
     background-color: var(--secondary-dark);
  }
  
-/* Botão de Adicionar Nova Categoria (Primário) */
 #add-new-category-btn {
      margin-top: 1rem;
 }
@@ -595,7 +614,6 @@ input[type="password"]:focus {
     gap: 0.5rem;
     margin-top: 1rem;
 }
-/* Aplica estilo secundário ao botão Cancelar */
 #cancel-add-btn {
     background-color: var(--surface);
     color: var(--secondary);
@@ -609,45 +627,36 @@ input[type="password"]:focus {
     box-shadow: none;
     transform: none;
 }
-/* --- Logo (Novo e Reutilizável) --- */
+
+/* --- Logo --- */
 .logo-container {
-    /* Define o contexto para o h1 */
     text-align: center;
-    margin-bottom: 1.5rem; /* Espaçamento padrão abaixo do logo */
+    margin-bottom: 1.5rem;
 }
 
 .logo-container h1 {
-    font-size: 3rem; /* Tamanho consistente */
-    font-weight: 800; /* Forte e confiante */
+    font-size: 3rem;
+    font-weight: 800;
     letter-spacing: -0.5px;
-    color: var(--text-primary); /* Cor de texto padrão (quase preto) */
-    margin: 0; /* Reseta a margem do h1 */
+    color: var(--text-primary);
+    margin: 0;
 }
 
-/* O destaque da marca "Tin" (AGORA ANIMADO) */
 .logo-container h1 .logo-brand {
-    /* 1. Define um gradiente mais rico para a animação */
     background: linear-gradient(
         90deg, 
-        #ee2fa5, /* Um roxo-azulado elegante */
+        #ee2fa5,
         var(--primary), 
         #5654c4
     );
-    
-    /* 2. Torna o fundo 3x maior que o texto */
     background-size: 300% 300%; 
-    
-    /* 3. Aplica a animação */
     animation: gradient-flow 4s ease-in-out infinite;
-
-    /* Mantém o recorte de texto */
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
     display: inline-block;
 }
 
-/* --- Animação de Gradiente para Logo --- */
 @keyframes gradient-flow {
     0% {
         background-position: 0% 50%;
