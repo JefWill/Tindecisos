@@ -181,19 +181,6 @@ input[type="password"]:focus {
     justify-content: center;
     gap: 1.5rem;
 }
-/* H1 estilizado como logo */
-#home-screen h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    margin-bottom: 0;
-    letter-spacing: -0.5px;
-    /* Gradiente sutil no texto */
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: inline-block;
-}
 .session-controls {
     width: 100%;
     padding: 1.5rem;

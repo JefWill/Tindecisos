@@ -112,6 +112,8 @@ async function initializeAppFirebase() {
                 // Verifica se o e-mail do usuário está na lista de permitidos
                 if (allowedEmails.includes(user.email)) {
                     userId = user.uid;
+                    // Inicia o listener para os dados do app (listas) APÓS autenticação
+                    listenToAppData(); 
                     console.log("Usuário autorizado autenticado:", user.email, "| UserID:", userId);
                     elements.loadingMessage.style.display = 'none';
                     switchScreen('home'); // Vai para a tela principal
@@ -173,14 +175,15 @@ async function handleLogout() {
         showError("Ocorreu um erro ao sair.");
     }
 }
+// --- Funções de Navegação e UI ---
+
 /**
  * Renderiza o logo do app em todos os placeholders.
  * Isso centraliza a aparência do logo em um único lugar.
  */
 function renderLogo() {
-    // Logo tipográfico moderno. O <span> será estilizado pelo CSS.
-    const logoHTML = '<h1><span class="logo-brand">T</span>indecisos</h1>'; 
-    
+    // O HTML correto para o logo, com o "T" destacado.
+    const logoHTML = '<h1><span class="logo-brand">T</span>indecisos</h1>';
     const placeholders = document.querySelectorAll('.logo-container');
     placeholders.forEach(placeholder => {
         placeholder.innerHTML = logoHTML;
@@ -239,7 +242,7 @@ async function createSession() {
         
         // Inicia o listener e vai para a seleção de categoria
         // AGORA VAI PARA O LOBBY PRIMEIRO
-        listenToSession(currentSessionId);
+        await listenToSession(currentSessionId);
 
     } catch (error) {
         console.error("Erro ao criar sessão:", error);
@@ -283,7 +286,7 @@ async function joinSession() {
         });
         
         // Inicia o listener e vai para o Lobby
-        listenToSession(currentSessionId);
+        await listenToSession(currentSessionId);
         // (O listener cuidará de mover para a tela correta)
 
     } catch (error) {
@@ -297,7 +300,7 @@ async function joinSession() {
  * Inicia o listener (onSnapshot) para a sessão atual.
  * Este é o coração do app multiplayer.
  */
-function listenToSession(sessionId) {
+async function listenToSession(sessionId) {
     // Se já houver um listener, cancela antes de criar um novo
     if (sessionUnsubscribe) {
         sessionUnsubscribe();
@@ -305,7 +308,7 @@ function listenToSession(sessionId) {
 
     const sessionRef = doc(db, `tindecisos-sessions/${sessionId}`);
     
-    sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
+    return new Promise((resolve) => { sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
         if (!docSnap.exists()) {
             showError("A sessão foi encerrada ou não existe mais.");
             leaveSession();
@@ -367,7 +370,8 @@ function listenToSession(sessionId) {
             switchScreen('lobby');
         }
         updateLobbyStatus(false); // false = aguardando
-    });
+        resolve(); // Resolve a promise na primeira execução do snapshot
+    }); });
 }
 
 /**
