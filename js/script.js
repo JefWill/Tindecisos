@@ -173,7 +173,19 @@ async function handleLogout() {
         showError("Ocorreu um erro ao sair.");
     }
 }
-// --- Funções de Navegação e UI ---
+/**
+ * Renderiza o logo do app em todos os placeholders.
+ * Isso centraliza a aparência do logo em um único lugar.
+ */
+function renderLogo() {
+    // Logo tipográfico moderno. O <span> será estilizado pelo CSS.
+    const logoHTML = '<h1><span class="logo-brand">T</span>indecisos</h1>'; 
+    
+    const placeholders = document.querySelectorAll('.logo-container');
+    placeholders.forEach(placeholder => {
+        placeholder.innerHTML = logoHTML;
+    });
+}
 
 function switchScreen(screenName) {
     Object.values(screens).forEach(screen => {
@@ -909,6 +921,9 @@ document.addEventListener('DOMContentLoaded', () => {
         manageList: document.getElementById('manage-list'),
         manageTitle: document.getElementById('manage-title')
     };
+
+    // --- Renderiza elementos reutilizáveis ---
+    renderLogo();
 
     // --- Listeners de Eventos Globais ---
     

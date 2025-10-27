@@ -1,185 +1,255 @@
+/* --- :root (Variáveis da Nova Paleta de Cores) --- */
+:root {
+    --primary: #007AFF;         /* Azul vibrante (Apple Blue) */
+    --primary-dark: #0056b3;      /* Azul mais escuro (Hover) */
+    --secondary: #6C757D;        /* Cinza neutro (Botões secundários) */
+    --secondary-dark: #5a6268;   /* Cinza (Hover) */
+    
+    --success: #28a745;         /* Verde para "Like" */
+    --danger: #dc3545;          /* Vermelho para "Dislike" */
+    
+    --text-primary: #1A1B2F;    /* Quase preto (para títulos) */
+    --text-secondary: #5A5F7D;  /* Cinza-azulado (para parágrafos) */
+    
+    --background: #F7F9FC;      /* Fundo do app (cinza muito claro) */
+    --surface: #FFFFFF;         /* Fundo de cards/modals (branco) */
+    --border: #E8EBF2;          /* Cor da borda sutil */
+
+    /* Sombras Modernas */
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.02), 0 5px 15px rgba(0,0,0,0.05);
+    --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
+    --shadow-btn: 0 4px 14px 0 rgba(0, 122, 255, 0.3);
+}
+
 /* --- Reset Básico e Padrões --- */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
     height: 100%;
     width: 100%;
-    overflow: hidden; /* Evita scroll da página */
-    background-color: #f4f4f9; /* Fundo cinza suave */
+    overflow: hidden;
+    background-color: var(--background); /* Aplica fundo moderno */
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    color: var(--text-secondary);
+    line-height: 1.5;
 }
 
 /* --- Contêiner Principal --- */
 .app-container {
     width: 100%;
     height: 100%;
-    max-width: 420px; /* Limite de largura (ótimo para mobile-first) */
+    max-width: 420px;
     margin: 0 auto;
-    background-color: #ffffff;
-    border-radius: 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    background-color: var(--surface); /* Fundo branco para o "app" */
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Garante que nada transborde */
+    overflow: hidden;
     position: relative;
 }
 
-/* Em telas maiores, mostra como um "celular" */
 @media (min-width: 450px) {
     .app-container {
         max-height: 850px;
         height: calc(100% - 40px);
         margin: 20px auto;
         border-radius: 24px;
-        border: 1px solid #e0e0e0;
+        border: 1px solid var(--border);
     }
 }
 
 /* --- Estrutura das Telas --- */
 .screen {
-    display: none; /* Oculta todas as telas por padrão */
+    display: none;
     flex-direction: column;
     width: 100%;
     height: 100%;
     padding: 1.5rem;
-    overflow-y: auto; /* Permite scroll interno se necessário */
+    overflow-y: auto;
     overflow-x: hidden;
-    background-color: #ffffff;
+    background-color: var(--surface);
     position: relative;
 }
 
 .screen.active {
-    display: flex; /* Mostra a tela ativa */
+    display: flex;
 }
 
-/* --- Tela de Login (NOVA) --- */
+/* --- Títulos e Textos --- */
+h1, h2, h3 {
+    color: var(--text-primary);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+/* --- Estilos Gerais de Botões (Modernizados) --- */
+.start-btn, .manage-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.9rem 1rem; /* Mais elegante */
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 12px; /* Mais suave */
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-shadow: var(--shadow-btn); /* Sombra que "eleva" o botão */
+}
+.start-btn:hover, .manage-btn:hover {
+    background-color: var(--primary-dark);
+    box-shadow: 0 6px 16px 0 rgba(0, 100, 230, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Botão Secundário (Estilo "Ghost"/Vazado) */
+.secondary-btn {
+    background-color: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--border);
+    box-shadow: none;
+}
+.secondary-btn:hover {
+    background-color: var(--background);
+    border-color: var(--border);
+    color: var(--primary-dark);
+    box-shadow: none;
+    transform: none;
+}
+
+/* --- Estilos Gerais de Inputs (Modernizados) --- */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: inherit;
+    background-color: var(--background);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: var(--surface);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.error-message {
+    color: var(--danger);
+    font-weight: 600;
+    min-height: 1.2rem;
+}
+/* --- Tela de Login --- */
 #login-screen {
     justify-content: center;
     text-align: center;
     gap: 1.5rem;
 }
-
 .login-form {
     width: 100%;
     padding: 1.5rem;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    background: #fdfdfd;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.login-form input {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-family: inherit;
-}
-
-.error-message {
-    color: #F44336;
-    font-weight: 600;
-    min-height: 1.2rem;
-}
-/* --- Tela Inicial (Home) - REFEITA --- */
+/* --- Tela Inicial (Home) --- */
 #home-screen {
     text-align: center;
     justify-content: center;
     gap: 1.5rem;
 }
-
+/* H1 estilizado como logo */
 #home-screen h1 {
-    font-size: 3.5rem;
+    font-size: 3rem;
     font-weight: 800;
-    color: #333;
     margin-bottom: 0;
+    letter-spacing: -0.5px;
+    /* Gradiente sutil no texto */
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
 }
-
-/* Contêiner para Ações da Sessão */
 .session-controls {
     width: 100%;
     padding: 1.5rem;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    background: #fdfdfd;
+    border: 1px solid var(--border);
+    border-radius: 16px; /* Mais arredondado */
+    background: var(--surface);
 }
-
 .session-controls h2 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #333;
     margin-bottom: 1.5rem;
 }
-
 #session-id-input {
-    width: 100%;
-    padding: 0.8rem 1rem;
     font-size: 1.2rem;
     text-align: center;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    font-family: inherit;
     text-transform: uppercase;
+    margin-bottom: 1rem;
 }
-
 #session-id-input::placeholder {
     text-transform: none;
 }
-
 .session-buttons {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
-
-/* Botão de Gerenciar (agora na home) */
-#open-manage-btn {
-    background-color: #6c757d;
-    color: white;
-    width: 100%;
-    border: none;
-    padding: 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 10px;
-    cursor: pointer;
+/* Botão Gerenciar e Sair agora são secundários */
+#open-manage-btn, #logout-btn {
+    background-color: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     transition: all 0.2s ease;
 }
- #open-manage-btn:hover {
-    background-color: #5a6268;
+#open-manage-btn:hover, #logout-btn:hover {
+    background-color: var(--background);
+    border-color: var(--border);
+    color: var(--text-primary);
+    box-shadow: none;
+    transform: none;
 }
-
-/* Mensagem de Loading/Erro na Home */
 #loading-message {
     font-size: 1rem;
     font-weight: 600;
-    color: #555;
+    color: var(--text-secondary);
     min-height: 1.2rem;
-    /* display: none; é controlado por JS */
 }
-
-/* Feedback de Adicionar/Excluir Item */
- #add-feedback {
+#add-feedback {
     font-size: 1rem;
     font-weight: 600;
-    color: #4CAF50;
+    color: var(--success);
     min-height: 1.2rem;
     transition: color 0.3s ease;
- }
+}
 
-
-/* --- Tela de Seleção de Categoria (NOVA) --- */
+/* --- Tela de Seleção de Categoria --- */
 #category-select-screen {
     justify-content: flex-start;
     text-align: center;
@@ -195,23 +265,25 @@ html, body {
     width: 100%;
 }
 .category-card-select {
-    background: #f9f9f9;
-    border: 1px solid #eee;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow-sm);
     font-size: 1.5rem;
     font-weight: 600;
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .category-card-select:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    background-color: #fff;
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    background-color: var(--surface);
+    color: var(--primary);
 }
 
-/* --- Tela de Lobby (NOVA) --- */
+/* --- Tela de Lobby --- */
 #lobby-screen {
     justify-content: center;
     text-align: center;
@@ -223,36 +295,37 @@ html, body {
 #session-id-display {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #007bff;
-    background: #f4f4f9;
+    color: var(--primary); /* Azul */
+    background: var(--background);
     padding: 1rem;
     border-radius: 8px;
-    border: 1px dashed #ccc;
+    border: 1px dashed var(--border);
     letter-spacing: 2px;
 }
 #lobby-status {
     font-size: 1.1rem;
-    color: #555;
+    color: var(--text-secondary);
     min-height: 2.5rem;
 }
 #lobby-user-id {
     font-size: 0.8rem;
-    color: #999;
+    color: var(--text-secondary);
+    opacity: 0.7;
     word-break: break-all;
 }
 
 /* --- Tela de Swipe --- */
 #swipe-screen {
-    justify-content: center; /* Centraliza verticalmente o grupo */
-    align-items: center; /* Centraliza horizontalmente */
+    justify-content: center;
+    align-items: center;
     text-align: center;
     padding: 1.5rem;
-    gap: 2rem; /* Espaço entre card e botões */
-    overflow: hidden; /* Impede que o card vaze durante a animação */
+    gap: 2rem;
+    overflow: hidden;
 }
 .card-container {
     width: 100%;
-    height: 60%; /* Ocupa 60% da altura da tela */
+    height: 60%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -261,35 +334,25 @@ html, body {
 .card {
     width: 100%;
     height: 100%;
-    background-color: #fff;
+    background-color: var(--surface);
     border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md); /* Sombra mais suave */
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    position: relative; /* Para animações */
+    position: relative;
     cursor: grab;
-    transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* Para o "soltar" */
+    transition: transform 0.4s ease-out, opacity 0.4s ease-out;
 }
-
-/* Animações de entrada/saída */
-.card.slide-in {
-    opacity: 0;
-    transform: scale(0.95);
-}
-.card.slide-out-left {
-    opacity: 0;
-    transform: translateX(-150%) rotate(-30deg) !important;
-}
-.card.slide-out-right {
-    opacity: 0;
-    transform: translateX(150%) rotate(30deg) !important;
-}
+/* Animações de entrada/saída (sem alteração) */
+.card.slide-in { opacity: 0; transform: scale(0.95); }
+.card.slide-out-left { opacity: 0; transform: translateX(-150%) rotate(-30deg) !important; }
+.card.slide-out-right { opacity: 0; transform: translateX(150%) rotate(30deg) !important; }
 
 #item-image {
     width: 100%;
-    height: 100%; /* Ocupa todo o espaço do card */
-    object-fit: cover; /* Garante que a imagem cubra */
+    height: 100%;
+    object-fit: cover;
 }
 #item-name {
     position: absolute;
@@ -303,7 +366,6 @@ html, body {
     padding: 2rem 1.5rem 1.5rem;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
-
 .swipe-buttons {
     display: flex;
     justify-content: center;
@@ -314,8 +376,8 @@ html, body {
     width: 70px;
     height: 70px;
     border-radius: 50%;
-    border: 1px solid #e0e0e0;
-    background-color: #fff;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
     font-size: 2rem;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
@@ -323,18 +385,22 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
+    color: #999; /* Cor base neutra */
 }
 .swipe-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
 }
+/* Cores corretas (UX) */
 #dislike-btn:hover {
     background-color: #FFF0F0;
     border-color: #FFCDCD;
+    color: var(--danger); /* Vermelho */
 }
 #like-btn:hover {
     background-color: #F0FFF3;
     border-color: #C1E1C1;
+    color: var(--success); /* Verde */
 }
 
 /* --- Tela de Resultados --- */
@@ -344,12 +410,11 @@ html, body {
 }
 #results-screen h2 {
     font-size: 2rem;
-    font-weight: 700;
     margin-bottom: 2rem;
 }
 #no-matches-msg {
     font-size: 1.2rem;
-    color: #777;
+    color: var(--text-secondary);
 }
 #liked-list {
     list-style-type: none;
@@ -362,11 +427,11 @@ html, body {
 #liked-list li {
     display: flex;
     align-items: center;
-    background: #f9f9f9;
+    background: var(--background);
     border-radius: 10px;
     padding: 0.75rem;
-    border: 1px solid #eee;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
 .result-thumb {
     width: 50px;
@@ -379,33 +444,24 @@ html, body {
 #liked-list li span {
     font-size: 1.2rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
 }
 #restart-btn {
-            background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
+    background-color: var(--primary); /* Azul */
     margin-top: auto; /* Empurra para baixo */
 }
 #restart-btn:hover {
-            background-color: #0056b3;
+    background-color: var(--primary-dark);
 }
 
-/* --- Tela de Gerenciamento (REFEITA) --- */
+/* --- Tela de Gerenciamento --- */
 #manage-category-screen {
     justify-content: flex-start;
     text-align: center;
 }
 #manage-category-screen h2 {
      font-size: 1.75rem;
-     margin-bottom: 1.5rem;
+     margin-bottom: 0.5rem;
 }
 #manage-category-list {
     display: flex;
@@ -414,7 +470,6 @@ html, body {
     width: 100%;
     margin-bottom: 1.5rem;
 }
-
 #manage-items-screen {
     justify-content: flex-start;
 }
@@ -427,35 +482,33 @@ html, body {
 #manage-list {
     list-style-type: none;
     width: 100%;
-    background: #fdfdfd;
-    border: 1px solid #eee;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
 }
-
 /* Botão para adicionar item */
 .add-new-item-btn-list {
     display: block;
     width: 100%;
     padding: 1rem;
-    background: #f9f9f9;
+    background: var(--background);
     border: none;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border);
     font-size: 1.1rem;
     font-weight: 600;
-    color: #007bff;
+    color: var(--primary); /* Azul */
     cursor: pointer;
     transition: background 0.2s ease;
 }
  .add-new-item-btn-list:hover {
-    background: #f0f8ff;
+    background: #eaf5ff; /* Azul bem claro */
  }
-
 .manage-item {
     display: flex;
     align-items: center;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border);
 }
 .manage-item:last-child {
     border-bottom: none;
@@ -472,7 +525,7 @@ html, body {
     flex-grow: 1;
     font-size: 1.1rem;
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
 }
 .manage-item-buttons {
     display: flex;
@@ -484,58 +537,33 @@ html, body {
     font-size: 1.25rem;
     cursor: pointer;
     padding: 0.25rem;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease;
+    color: var(--text-secondary);
 }
-.edit-btn:hover, .delete-btn:hover {
+.edit-btn:hover {
     transform: scale(1.2);
+    color: var(--primary);
 }
-
-/* Botão de Voltar (NOVO) */
+.delete-btn:hover {
+    transform: scale(1.2);
+    color: var(--danger);
+}
+/* Botões de Voltar (Secundários) */
 #back-to-home-from-manage-cat-btn,
 #back-to-manage-cat-btn {
-            background-color: #6c757d; /* Cinza escuro */
+    background-color: var(--secondary);
     color: white;
-    border: none;
-    padding: 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
+    box-shadow: none;
     margin-top: auto; /* Empurra para baixo */
 }
  #back-to-home-from-manage-cat-btn:hover,
  #back-to-manage-cat-btn:hover {
-    background-color: #5a6268;
+    background-color: var(--secondary-dark);
  }
  
-/* Botão de Adicionar Nova Categoria */
+/* Botão de Adicionar Nova Categoria (Primário) */
 #add-new-category-btn {
      margin-top: 1rem;
-}
-
-/* --- Estilos Gerais de Botões --- */
-.start-btn, .manage-btn {
-            background-color: #007bff; /* Azul */
-    color: white;
-    border: none;
-    padding: 1rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-}
-.start-btn:hover, .manage-btn:hover {
-    background-color: #0056b3;
-}
-.secondary-btn {
-    background-color: #6c757d; /* Cinza */
-}
-.secondary-btn:hover {
-    background-color: #5a6268;
 }
 
 /* --- Modal (Popup) --- */
@@ -558,9 +586,9 @@ html, body {
     opacity: 1;
 }
 .modal-content {
-    background: #fff;
+    background: var(--surface);
     padding: 1.5rem;
-    border-radius: 12px;
+    border-radius: 16px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
     width: 90%;
     max-width: 380px;
@@ -578,17 +606,74 @@ html, body {
     font-weight: 600;
     text-align: center;
     margin-bottom: 0.5rem;
-}
-.modal-content input {
-    width: 100%;
-    padding: 0.8rem 1rem;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-family: inherit;
+    color: var(--text-primary);
 }
 .modal-buttons {
     display: flex;
     gap: 0.5rem;
     margin-top: 1rem;
+}
+/* Aplica estilo secundário ao botão Cancelar */
+#cancel-add-btn {
+    background-color: var(--surface);
+    color: var(--secondary);
+    border: 1px solid var(--border);
+    box-shadow: none;
+}
+#cancel-add-btn:hover {
+    background-color: var(--background);
+    border-color: var(--border);
+    color: var(--secondary-dark);
+    box-shadow: none;
+    transform: none;
+}
+/* --- Logo (Novo e Reutilizável) --- */
+.logo-container {
+    /* Define o contexto para o h1 */
+    text-align: center;
+    margin-bottom: 1.5rem; /* Espaçamento padrão abaixo do logo */
+}
+
+.logo-container h1 {
+    font-size: 3rem; /* Tamanho consistente */
+    font-weight: 800; /* Forte e confiante */
+    letter-spacing: -0.5px;
+    color: var(--text-primary); /* Cor de texto padrão (quase preto) */
+    margin: 0; /* Reseta a margem do h1 */
+}
+
+/* O destaque da marca "Tin" (AGORA ANIMADO) */
+.logo-container h1 .logo-brand {
+    /* 1. Define um gradiente mais rico para a animação */
+    background: linear-gradient(
+        90deg, 
+        #ee2fa5, /* Um roxo-azulado elegante */
+        var(--primary), 
+        #5654c4
+    );
+    
+    /* 2. Torna o fundo 3x maior que o texto */
+    background-size: 300% 300%; 
+    
+    /* 3. Aplica a animação */
+    animation: gradient-flow 4s ease-in-out infinite;
+
+    /* Mantém o recorte de texto */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+/* --- Animação de Gradiente para Logo --- */
+@keyframes gradient-flow {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
