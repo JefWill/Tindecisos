@@ -221,43 +221,11 @@ function showError(message) {
 /**
  * Cria uma nova sessão no Firestore.
  */
-async function createSession() {
+function createSession() {
     isCreator = true;
-    // Gera um ID de sessão curto e amigável
-    currentSessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
-    elements.loadingMessage.textContent = `Criando sessão ${currentSessionId}...`;
-    switchScreen('loading');
-
-    try {
-        // Caminho simplificado para a coleção de sessões
-        const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
-        
-        // Estrutura de dados inicial da sessão
-        const newSessionData = {
-            creatorId: userId,
-            joinerId: null,
-            categoryName: null, // Será definido pelo criador
-            itemsWithVotes: [], // Será preenchido após escolher a categoria
-            player1Index: 0, // Índice do criador
-            player2Index: 0, // Índice do jogador 2
-            player1Done: false,
-            player2Done: false,
-            createdAt: serverTimestamp()
-        };
-
-        await setDoc(sessionRef, newSessionData);
-        
-        // Inicia o listener que reagirá a mudanças na sessão.
-        listenToSession(currentSessionId);
-        // O listener, na sua primeira execução, nos levará para a tela de Lobby.
-
-    } catch (error) {
-        console.error("Erro ao criar sessão:", error);
-        showError(`Erro ao criar sessão. Tente novamente. ${error.message}`);
-        switchScreen('home');
-        isCreator = false;
-        currentSessionId = null;
-    }
+    // NOVO FLUXO: Leva o criador direto para a seleção de categoria.
+    renderCategorySelection();
+    switchScreen('category-select-screen');
 }
 
 /**
@@ -304,6 +272,40 @@ async function joinSession() {
 }
 
 /**
+ * O Criador seleciona uma categoria e a salva na sessão.
+ * Esta função agora também CRIA a sessão.
+ */
+async function selectCategoryAndCreateSession(categoryKey) {
+    if (!isCreator) return;
+
+    currentSessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    elements.loadingMessage.textContent = `Criando sessão ${currentSessionId}...`;
+    switchScreen('loading');
+
+    const items = appData[categoryKey] || [];
+    const itemsWithVotes = items.map(item => ({
+        ...item, p1_vote: null, p2_vote: null
+    }));
+
+    const newSessionData = {
+        creatorId: userId,
+        joinerId: null,
+        categoryName: categoryKey, // Categoria já definida
+        itemsWithVotes: itemsWithVotes, // Itens já definidos
+        player1Index: 0,
+        player2Index: 0,
+        player1Done: false,
+        player2Done: false,
+        createdAt: serverTimestamp()
+    };
+
+    const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+    await setDoc(sessionRef, newSessionData);
+
+    listenToSession(currentSessionId); // Inicia o listener e vai para o lobby.
+}
+
+/**
  * Inicia o listener (onSnapshot) para a sessão atual.
  * Este é o coração do app multiplayer.
  */
@@ -318,101 +320,36 @@ function listenToSession(sessionId) {
         }
         
         sessionData = docSnap.data();
-        console.log("Dados da sessão atualizados:", sessionData);
+        handleSessionStateChange(sessionData);
+    });
+}
 
-        // --- Roteamento de Tela baseado no Estado da Sessão ---
-        const currentScreen = document.querySelector('.screen.active');
-        const currentScreenId = currentScreen ? currentScreen.id : null;
+function handleSessionStateChange(data) {
+    const currentScreenId = document.querySelector('.screen.active')?.id;
 
+    // 1. Fim de jogo: Ambos os jogadores terminaram.
+    if (data.player1Done && data.player2Done) {
+        if (currentScreenId !== 'results-screen') showResults();
+        return;
+    }
 
-        // 1. Ambos jogadores terminaram? Mostrar Resultados.
-        if (sessionData.player1Done && sessionData.player2Done) { 
-            if (currentScreenId !== 'results-screen') {
-                showResults();
-            }
-            return;
+    // 2. Jogo em andamento: Ambos os jogadores estão na sessão.
+    if (data.joinerId) {
+        if (currentScreenId !== 'swipe-screen') {
+            switchScreen('swipe');
+            showNextCard();
         }
+        return;
+    }
 
-        // 2. O swipe está em progresso? (Categoria já foi escolhida)
-        if (sessionData.categoryName) {
-            // GUARDA: Não tente mostrar o card se a lista de itens da sessão ainda não foi sincronizada.
-            if (!sessionData.itemsWithVotes || sessionData.itemsWithVotes.length === 0) {
-                console.warn("Categoria definida, mas 'itemsWithVotes' ainda não sincronizado. Aguardando...");
-                return;
-            }
-
-            if (currentScreenId !== 'swipe-screen') {
-                switchScreen('swipe');
-                showNextCard(); // Carrega o card correto
-            }
-            return;
-        }
-
-// 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
-        if (sessionData.joinerId) {
-            // Jogador 2 entrou. Se eu sou o criador, vou para a seleção de categoria.
-            if (isCreator) {
-                // GUARDA: Só renderiza se appData estiver pronto
-                if (!appData || Object.keys(appData).length === 0) {
-                    console.warn("Joiner conectado, mas 'appData' ainda não está pronto. Aguardando...");
-                    // Mostra loading para o criador
-                    if (currentScreenId !== 'loading-screen') {
-                        elements.loadingMessage.textContent = "Carregando listas...";
-                        switchScreen('loading');
-                    }
-                    return;
-                }
-                
-                // appData está pronto, mostra seleção de categoria
-                if (currentScreenId !== 'category-select-screen') {
-                    renderCategorySelection();
-                    switchScreen('category-select-screen');
-                }
-            } else { // Se eu sou o jogador 2, continuo no lobby esperando.
-                if (currentScreenId !== 'lobby-screen') {
-                    switchScreen('lobby');
-                }
-                updateLobbyStatus(true); // true = jogador 2 conectado
-            }
-            return;
-        }
-
-        // 4. Estado Padrão: Ninguém entrou ainda, ambos aguardam no Lobby.
+    // 3. Lobby: Criador aguardando o segundo jogador.
+    // (A categoria já foi escolhida, então só precisamos esperar)
+    if (isCreator) {
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
         }
         updateLobbyStatus(false); // false = aguardando
-    });
-}
-/**
- * O Criador seleciona uma categoria e a salva na sessão.
- */
-async function selectCategoryForSession(categoryKey) {
-    if (!isCreator || !currentSessionId) return;
-    
-    // Pega os itens da lista local
-    const items = appData[categoryKey] || [];
-    
-    // Transforma os itens para a estrutura do Firestore
-    const itemsWithVotes = items.map(item => ({
-        ...item,
-        p1_vote: null, // null, 'like', 'dislike'
-        p2_vote: null
-    }));
-
-    try {
-        const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
-        await updateDoc(sessionRef, {
-            categoryName: categoryKey,
-            itemsWithVotes: itemsWithVotes
-        });
-        
-        // O onSnapshot vai pegar essa mudança e mover ambos os jogadores
-        // para a tela de swipe (Lógica no listenToSession)
-        
-    } catch (error) {
-        console.error("Erro ao selecionar categoria:", error);
-        showError("Erro ao iniciar a sessão. Tente novamente.");
+        return;
     }
 }
 
@@ -487,7 +424,7 @@ function renderCategorySelection() {
         elements.categorySelectList.addEventListener('click', (e) => {
             const category = e.target.closest('.category-card-select')?.dataset.category;
             if (category) {
-                selectCategoryForSession(category);
+                selectCategoryAndCreateSession(category);
             }
         });
         elements.categorySelectList.dataset.listenerAttached = 'true';
