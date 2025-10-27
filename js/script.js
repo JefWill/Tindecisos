@@ -348,17 +348,22 @@ function listenToSession(sessionId) {
             return;
         }
 
-        // 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
+// 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
         if (sessionData.joinerId) {
-            // GUARDA: Não tente renderizar a seleção de categoria se os dados do app (appData) ainda não carregaram.
-            if (!appData || Object.keys(appData).length === 0) {
-                console.warn("Joiner conectado, mas 'appData' ainda não está pronto. Aguardando...");
-                // Opcional: Mostrar uma mensagem de "Carregando listas..." no lobby.
-                return;
-            }
-
             // Jogador 2 entrou. Se eu sou o criador, vou para a seleção de categoria.
             if (isCreator) {
+                // GUARDA: Só renderiza se appData estiver pronto
+                if (!appData || Object.keys(appData).length === 0) {
+                    console.warn("Joiner conectado, mas 'appData' ainda não está pronto. Aguardando...");
+                    // Mostra loading para o criador
+                    if (currentScreenId !== 'loading-screen') {
+                        elements.loadingMessage.textContent = "Carregando listas...";
+                        switchScreen('loading');
+                    }
+                    return;
+                }
+                
+                // appData está pronto, mostra seleção de categoria
                 if (currentScreenId !== 'category-select-screen') {
                     renderCategorySelection();
                     switchScreen('category-select-screen');
