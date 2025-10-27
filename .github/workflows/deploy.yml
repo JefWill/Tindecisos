@@ -1,0 +1,52 @@
+# Nome do fluxo de trabalho
+name: Deploy to GitHub Pages
+
+# Gatilho: acionado em cada push para a branch 'main'
+on:
+  push:
+    branches:
+      - main # ou 'master', dependendo do nome da sua branch principal
+
+# Permissões necessárias para o job de deploy
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Garante que apenas um deploy ocorra por vez, cancelando os anteriores
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+# Jobs a serem executados
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Baixa o código do seu repositório
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Cria o arquivo firebase-config.js usando o segredo
+      - name: Create Firebase config file
+        run: |
+          mkdir -p js
+          echo "const firebaseConfig = { ${{ secrets.FIREBASE_CONFIG }} };" > js/firebase-config.js
+
+      # 3. Configura o ambiente para o deploy no GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # 4. "Upa" os arquivos do site (incluindo o firebase-config.js gerado) como um artefato
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      # 5. Faz o deploy final do artefato para o GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
