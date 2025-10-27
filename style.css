@@ -181,6 +181,16 @@ input[type="password"]:focus {
     justify-content: center;
     gap: 1.5rem;
 }
+/* Feedback de usuário logado */
+#user-status {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: var(--background);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block; /* Para o padding funcionar bem */
+}
 .session-controls {
     width: 100%;
     padding: 1.5rem;

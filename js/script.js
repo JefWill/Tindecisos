@@ -21,7 +21,10 @@ let currentEditIndex = null; // Índice do item sendo editado
 const allowedEmails = [
     "jeffersonsenarn@gmail.com",       // <-- TROQUE PELO SEU E-MAIL
     "jessicaminern@gmail.com",          // <-- COLOQUE OS E-MAILS REAIS AQUI
-    "jeffersonwillamern@gmail.com"
+    "jeffersonwillamern@gmail.com",
+    "pedrobilau177@gmail.com",
+    "ellydapereira124@gmail.com"
+
 ];
 
 // --- Elementos de UI Globais ---
@@ -103,9 +106,6 @@ async function initializeAppFirebase() {
         auth = getAuth(app);
         setLogLevel('error'); // Mude para 'debug' para mais logs
 
-        // Inicia o listener para os dados do app (listas)
-        listenToAppData();
-
         // Autenticar o usuário
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -113,6 +113,9 @@ async function initializeAppFirebase() {
                 if (allowedEmails.includes(user.email)) {
                     userId = user.uid;
                     // Inicia o listener para os dados do app (listas) APÓS autenticação
+                    if (elements.userStatus) {
+                        elements.userStatus.textContent = `Conectado como: ${user.email}`;
+                    }
                     listenToAppData(); 
                     console.log("Usuário autorizado autenticado:", user.email, "| UserID:", userId);
                     elements.loadingMessage.style.display = 'none';
@@ -126,6 +129,9 @@ async function initializeAppFirebase() {
                 }
             } else {
                 // Nenhum usuário logado, mostrar a tela de login
+                if (elements.userStatus) {
+                    elements.userStatus.textContent = '';
+                }
                 console.log("Nenhum usuário logado. Mostrando tela de login.");
                 elements.loadingMessage.style.display = 'none';
                 switchScreen('login');
@@ -240,9 +246,9 @@ async function createSession() {
 
         await setDoc(sessionRef, newSessionData);
         
-        // Inicia o listener e vai para a seleção de categoria
-        // AGORA VAI PARA O LOBBY PRIMEIRO
+        // Inicia o listener que reagirá a mudanças na sessão.
         await listenToSession(currentSessionId);
+        // O listener, na sua primeira execução, nos levará para a tela de Lobby.
 
     } catch (error) {
         console.error("Erro ao criar sessão:", error);
@@ -286,7 +292,7 @@ async function joinSession() {
         });
         
         // Inicia o listener e vai para o Lobby
-        await listenToSession(currentSessionId);
+        listenToSession(currentSessionId);
         // (O listener cuidará de mover para a tela correta)
 
     } catch (error) {
@@ -300,7 +306,7 @@ async function joinSession() {
  * Inicia o listener (onSnapshot) para a sessão atual.
  * Este é o coração do app multiplayer.
  */
-async function listenToSession(sessionId) {
+function listenToSession(sessionId) {
     // Se já houver um listener, cancela antes de criar um novo
     if (sessionUnsubscribe) {
         sessionUnsubscribe();
@@ -308,7 +314,7 @@ async function listenToSession(sessionId) {
 
     const sessionRef = doc(db, `tindecisos-sessions/${sessionId}`);
     
-    return new Promise((resolve) => { sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
+    sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
         if (!docSnap.exists()) {
             showError("A sessão foi encerrada ou não existe mais.");
             leaveSession();
@@ -370,8 +376,7 @@ async function listenToSession(sessionId) {
             switchScreen('lobby');
         }
         updateLobbyStatus(false); // false = aguardando
-        resolve(); // Resolve a promise na primeira execução do snapshot
-    }); });
+    });
 }
 
 /**
@@ -907,6 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordInput: document.getElementById('password-input'),
         loadingMessage: document.getElementById('loading-message'),
         sessionInput: document.getElementById('session-id-input'),
+        userStatus: document.getElementById('user-status'), // Novo elemento
         categorySelectList: document.getElementById('category-select-list'),
         lobbyStatus: document.getElementById('lobby-status'),
         sessionIdDisplay: document.getElementById('session-id-display'),
