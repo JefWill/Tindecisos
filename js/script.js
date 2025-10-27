@@ -16,25 +16,23 @@ let isCreator = false;
 let sessionData = null; // Cópia local dos dados da sessão
 let currentCategoryKey = null; // Categoria sendo gerenciada
 let currentEditIndex = null; // Índice do item sendo editado
+let isAppDataReady = false; // Flag para saber se appData já carregou
 
 // --- Lista de Usuários Autorizados ---
 const allowedEmails = [
-    "jeffersonsenarn@gmail.com",       // <-- TROQUE PELO SEU E-MAIL
-    "jessicaminern@gmail.com",          // <-- COLOQUE OS E-MAILS REAIS AQUI
+    "jeffersonsenarn@gmail.com",
+    "jessicaminern@gmail.com",
     "jeffersonwillamern@gmail.com",
     "pedrobilau177@gmail.com",
     "ellydapereira124@gmail.com"
-
 ];
 
 // --- Elementos de UI Globais ---
-// (Serão inicializados no DOMContentLoaded)
 let screens = {};
 let elements = {};
 let buttons = {};
 
 // --- Dados Locais (para criar novas sessões) ---
-// (O CRUD ainda edita estes dados)
 let appData = {};
 const defaultData = {
     "Hobbies": [
@@ -57,7 +55,6 @@ const defaultData = {
 
 /**
  * Ouve as mudanças nos dados do aplicativo (listas) do Firestore.
- * Esta função substitui o antigo loadLocalData.
  */
 function listenToAppData() {
     const appDataRef = doc(db, "app-data", "lists");
@@ -65,24 +62,23 @@ function listenToAppData() {
     onSnapshot(appDataRef, (docSnap) => {
         if (docSnap.exists()) {
             appData = docSnap.data();
+            isAppDataReady = true;
             console.log("Dados de listas sincronizados do Firestore:", appData);
-            // NOVO: Se a tela de gerenciamento de categorias estiver ativa,
-            // atualiza a lista para refletir os novos dados.
-            if (screens.manageCategory.classList.contains('active')) {
+            
+            if (screens.manageCategory?.classList.contains('active')) {
                 renderManageCategoryList();
             }
         } else {
-            // Se o documento não existir, cria com os dados padrão
             console.log("Nenhum dado de lista encontrado no Firestore. Criando com dados padrão...");
             appData = JSON.parse(JSON.stringify(defaultData));
-            saveAppData(); // Salva os dados padrão no Firestore
+            isAppDataReady = true;
+            saveAppData();
         }
     });
 }
 
 /**
  * Salva o objeto appData inteiro no Firestore.
- * Esta função substitui o antigo saveLocalData.
  */
 async function saveAppData() {
     const appDataRef = doc(db, "app-data", "lists");
@@ -94,47 +90,40 @@ async function saveAppData() {
     }
 }
 
-
 // --- Inicialização do App ---
 async function initializeAppFirebase() {
     try {
-        // A variável `firebaseConfig` é global, vinda de `firebase-config.js`
         if (typeof firebaseConfig === 'undefined') {
             throw new Error("Configuração do Firebase não encontrada. Verifique se o arquivo firebase-config.js está correto e foi incluído.");
         }
 
-        // Usa o projectId como o appId para os caminhos do Firestore
         appId = firebaseConfig.projectId;
         
         const app = initializeApp(firebaseConfig);
         db = getFirestore(app);
         auth = getAuth(app);
-        setLogLevel('error'); // Mude para 'debug' para mais logs
+        setLogLevel('error');
 
-        // Autenticar o usuário
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Verifica se o e-mail do usuário está na lista de permitidos
                 if (allowedEmails.includes(user.email)) {
                     userId = user.uid;
-                    // Inicia o listener para os dados do app (listas) APÓS autenticação
+                    
                     if (elements.userStatus) {
                         elements.userStatus.textContent = `Conectado como: ${user.email}`;
                     }
-                    // Inicia o listener para os dados do app (listas) APÓS autenticação
+                    
                     listenToAppData(); 
                     console.log("Usuário autorizado autenticado:", user.email, "| UserID:", userId);
                     elements.loadingMessage.style.display = 'none';
-                    switchScreen('home'); // Vai para a tela principal
+                    switchScreen('home');
                 } else {
-                    // Se não for um usuário permitido, desloga e mostra erro
                     console.warn("Usuário não autorizado tentou login:", user.email);
                     await signOut(auth);
                     showError("Você não tem permissão para acessar este app.");
-                    switchScreen('login'); // Mostra a tela de login com a mensagem de erro
+                    switchScreen('login');
                 }
             } else {
-                // Nenhum usuário logado, mostrar a tela de login
                 if (elements.userStatus) {
                     elements.userStatus.textContent = '';
                 }
@@ -166,11 +155,10 @@ async function handleLogin() {
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        // O onAuthStateChanged cuidará do resto
     } catch (error) {
         console.error("Erro no login:", error);
         showError("E-mail ou senha incorretos. Tente novamente.");
-        switchScreen('login'); // Volta para a tela de login em caso de erro
+        switchScreen('login');
     }
 }
 
@@ -178,23 +166,20 @@ async function handleLogin() {
 async function handleLogout() {
     try {
         await signOut(auth);
-        // O onAuthStateChanged vai detectar a saída e redirecionar para a tela de login.
         console.log("Usuário deslogado com sucesso.");
-        // Limpa qualquer estado de sessão residual
         leaveSession(); 
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
         showError("Ocorreu um erro ao sair.");
     }
 }
+
 // --- Funções de Navegação e UI ---
 
 /**
  * Renderiza o logo do app em todos os placeholders.
- * Isso centraliza a aparência do logo em um único lugar.
  */
 function renderLogo() {
-    // O HTML correto para o logo, com o "T" destacado.
     const logoHTML = '<h1><span class="logo-brand">T</span>indecisos</h1>';
     const placeholders = document.querySelectorAll('.logo-container');
     placeholders.forEach(placeholder => {
@@ -216,22 +201,36 @@ function showError(message) {
     if (errorElement) {
         errorElement.textContent = message;
         errorElement.style.display = 'block';
-    } else { // Fallback para a tela de loading
+    } else {
         elements.loadingMessage.textContent = message;
     }
 }
 
-// --- Lógica Principal da Sessão (NOVO) ---
+// --- Lógica Principal da Sessão ---
 
 /**
- * Cria uma nova sessão no Firestore.
+ * Cria uma nova sessão (mostra seleção de categoria).
  */
 function createSession() {
     isCreator = true;
-    // O renderCategorySelection() agora é chamado DENTRO de switchScreen,
-    // mas para garantir que os dados mais recentes sejam usados, vamos chamá-lo aqui.
-    // Como appData já foi carregado no início, isso funcionará.
-    renderCategorySelection(); 
+    
+    // Verifica se appData está pronto
+    if (!isAppDataReady || !appData || Object.keys(appData).length === 0) {
+        elements.loadingMessage.textContent = "Carregando listas...";
+        switchScreen('loading');
+        
+        // Aguarda appData estar pronto
+        const checkInterval = setInterval(() => {
+            if (isAppDataReady && appData && Object.keys(appData).length > 0) {
+                clearInterval(checkInterval);
+                renderCategorySelection();
+                switchScreen('category-select-screen');
+            }
+        }, 100);
+        return;
+    }
+    
+    renderCategorySelection();
     switchScreen('category-select-screen');
 }
 
@@ -258,18 +257,14 @@ async function joinSession() {
             return;
         }
 
-        // Sessão encontrada, vamos entrar
         isCreator = false;
         currentSessionId = sessionIdToJoin;
         
-        // Atualiza o documento da sessão com o ID do jogador 2
         await updateDoc(sessionRef, {
             joinerId: userId
         });
         
-        // Inicia o listener e vai para o Lobby
         listenToSession(currentSessionId);
-        // (O listener cuidará de mover para a tela correta)
 
     } catch (error) {
         console.error("Erro ao entrar na sessão:", error);
@@ -279,8 +274,7 @@ async function joinSession() {
 }
 
 /**
- * O Criador seleciona uma categoria e a salva na sessão.
- * Esta função agora também CRIA a sessão.
+ * O Criador seleciona uma categoria e cria a sessão.
  */
 async function selectCategoryAndCreateSession(categoryKey) {
     if (!isCreator) return;
@@ -297,8 +291,8 @@ async function selectCategoryAndCreateSession(categoryKey) {
     const newSessionData = {
         creatorId: userId,
         joinerId: null,
-        categoryName: categoryKey, // Categoria já definida
-        itemsWithVotes: itemsWithVotes, // Itens já definidos
+        categoryName: categoryKey,
+        itemsWithVotes: itemsWithVotes,
         player1Index: 0,
         player2Index: 0,
         player1Done: false,
@@ -306,15 +300,19 @@ async function selectCategoryAndCreateSession(categoryKey) {
         createdAt: serverTimestamp()
     };
 
-    const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
-    await setDoc(sessionRef, newSessionData);
-
-    listenToSession(currentSessionId); // Inicia o listener e vai para o lobby.
+    try {
+        const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
+        await setDoc(sessionRef, newSessionData);
+        listenToSession(currentSessionId);
+    } catch (error) {
+        console.error("Erro ao criar sessão:", error);
+        showError("Erro ao criar sessão. Tente novamente.");
+        switchScreen('home');
+    }
 }
 
 /**
  * Inicia o listener (onSnapshot) para a sessão atual.
- * Este é o coração do app multiplayer.
  */
 function listenToSession(sessionId) {
     const sessionRef = doc(db, `tindecisos-sessions/${sessionId}`);
@@ -331,16 +329,19 @@ function listenToSession(sessionId) {
     });
 }
 
+/**
+ * Gerencia mudanças de estado da sessão.
+ */
 function handleSessionStateChange(data) {
     const currentScreenId = document.querySelector('.screen.active')?.id;
 
-    // 1. Fim de jogo: Ambos os jogadores terminaram.
+    // 1. Fim de jogo: Ambos terminaram
     if (data.player1Done && data.player2Done) {
         if (currentScreenId !== 'results-screen') showResults();
         return;
     }
 
-    // 2. Jogo em andamento: Ambos os jogadores estão na sessão.
+    // 2. Jogo em andamento: Ambos conectados
     if (data.joinerId) {
         if (currentScreenId !== 'swipe-screen') {
             switchScreen('swipe');
@@ -349,38 +350,40 @@ function handleSessionStateChange(data) {
         return;
     }
 
-    // 3. Lobby: Criador aguardando o segundo jogador.
+    // 3. Lobby: Aguardando jogador 2
     if (isCreator && !data.joinerId) {
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
+            updateLobbyStatus();
         }
-        // A função updateLobbyStatus é chamada dentro de switchScreen('lobby') no novo código
-        updateLobbyStatus(); 
         return;
     }
 }
 
+/**
+ * Atualiza a UI do Lobby.
+ */
+function updateLobbyStatus() {
+    elements.sessionIdDisplay.textContent = currentSessionId;
+    elements.lobbyStatus.textContent = "Aguardando outro jogador entrar...";
+}
 
 /**
  * Limpa o estado da sessão e volta para casa.
  */
 function leaveSession() {
     if (sessionUnsubscribe) {
-        sessionUnsubscribe(); // Para o listener
+        sessionUnsubscribe();
         sessionUnsubscribe = null;
     }
 
-    // Se o usuário é o criador da sessão, deleta o documento da sessão.
-    // Se for o jogador 2, apenas remove seu ID da sessão.
     if (currentSessionId && sessionData) {
         const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
         if (isCreator) {
             console.log("Criador saindo. Deletando sessão...");
-            // Usamos deleteDoc para remover a sessão inteira.
-            deleteDoc(sessionRef).catch(err => console.error("Erro ao deletar sessão:", err)); // Agora funciona, pois o import está correto.
+            deleteDoc(sessionRef).catch(err => console.error("Erro ao deletar sessão:", err));
         } else {
             console.log("Jogador 2 saindo. Limpando joinerId...");
-            // Apenas remove o ID do jogador 2, mantendo a sessão aberta.
             updateDoc(sessionRef, { joinerId: null }).catch(err => console.error("Erro ao sair da sessão:", err));
         }
     }
@@ -389,7 +392,6 @@ function leaveSession() {
     isCreator = false;
     sessionData = null;
 
-    // Limpa mensagens de erro
     const errorMessages = document.querySelectorAll('.error-message');
     errorMessages.forEach(el => {
         el.textContent = '';
@@ -403,17 +405,21 @@ function leaveSession() {
  * Renderiza a lista de categorias para o Criador escolher.
  */
 function renderCategorySelection() {
-    elements.categorySelectList.innerHTML = ''; // Limpa a lista
+    elements.categorySelectList.innerHTML = '';
+    
+    if (!appData || Object.keys(appData).length === 0) {
+        elements.categorySelectList.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--text-secondary);">Carregando categorias...</p>';
+        return;
+    }
     
     Object.keys(appData).forEach(categoryKey => {
         const card = document.createElement('div');
-        card.className = 'category-card-select'; // Estilo simples de botão
+        card.className = 'category-card-select';
         card.textContent = categoryKey;
         card.dataset.category = categoryKey;
         elements.categorySelectList.appendChild(card);
     });
     
-    // Adiciona listener (reutilizável)
     if (!elements.categorySelectList.dataset.listenerAttached) {
         elements.categorySelectList.addEventListener('click', (e) => {
             const category = e.target.closest('.category-card-select')?.dataset.category;
@@ -425,16 +431,14 @@ function renderCategorySelection() {
     }
 }
 
-
-// --- Lógica de Swipe (Atualizada para Firebase) ---
+// --- Lógica de Swipe ---
 
 /**
  * Mostra o card correto baseado no progresso do jogador.
  */
 function showNextCard() {
-    if (!sessionData) return; // Guarda de segurança
+    if (!sessionData) return;
 
-    // Determina qual índice usar (P1 ou P2)
     const myIndex = isCreator ? sessionData.player1Index : sessionData.player2Index;
     
     if (myIndex < sessionData.itemsWithVotes.length) {
@@ -454,7 +458,6 @@ function showNextCard() {
             elements.itemCard.classList.remove('slide-in');
         }, 20);
     } else {
-        // O jogador terminou de deslizar
         markPlayerAsDone();
     }
 }
@@ -466,8 +469,7 @@ async function handleSwipe(action) {
     if (isAnimating || !sessionData) return;
 
     const myIndex = isCreator ? sessionData.player1Index : sessionData.player2Index;
-    // Se já tiver terminado, não faz nada
-    if (myIndex >= sessionData.itemsWithVotes.length) return; 
+    if (myIndex >= sessionData.itemsWithVotes.length) return;
 
     isAnimating = true;
 
@@ -475,27 +477,21 @@ async function handleSwipe(action) {
     const indexField = isCreator ? 'player1Index' : 'player2Index';
     const nextIndex = myIndex + 1;
 
-    // Cópia local para atualização
     let updatedItems = [...sessionData.itemsWithVotes];
     updatedItems[myIndex][voteField] = action;
     
     try {
         const sessionRef = doc(db, `tindecisos-sessions/${currentSessionId}`);
         await updateDoc(sessionRef, {
-            itemsWithVotes: updatedItems, // Atualiza o array inteiro
-            [indexField]: nextIndex        // Atualiza o índice
+            itemsWithVotes: updatedItems,
+            [indexField]: nextIndex
         });
         
-        // Animação de saída
         elements.itemCard.style.transform = ''; 
         elements.itemCard.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out'; 
         elements.itemCard.classList.add(action === 'like' ? 'slide-out-right' : 'slide-out-left');
 
-        // O onSnapshot vai pegar a mudança no índice e chamar showNextCard
-        // Mas chamamos localmente para animação
         setTimeout(() => {
-            // O onSnapshot deve ter atualizado o sessionData
-            // e chamado showNextCard. Se não, forçamos.
             if (screens.swipe.classList.contains('active')) {
                  showNextCard();
             }
@@ -517,7 +513,6 @@ async function markPlayerAsDone() {
      
      const doneField = isCreator ? 'player1Done' : 'player2Done';
      
-     // Evita escritas desnecessárias
      if (sessionData[doneField] === true) return;
      
      try {
@@ -526,10 +521,6 @@ async function markPlayerAsDone() {
             [doneField]: true
         });
         
-        // O onSnapshot vai verificar se ambos estão prontos
-        // e mover para os resultados.
-        
-        // Mostra uma tela de espera
         elements.itemName.textContent = "Aguardando o outro jogador...";
         elements.itemImage.src = `https://placehold.co/400x250/eee/ccc?text=Aguardando...`;
         elements.itemCard.className = 'card';
@@ -540,7 +531,6 @@ async function markPlayerAsDone() {
          showError("Erro ao finalizar sua parte.");
      }
 }
-
 
 /**
  * Mostra a tela de resultados (calcula matches).
@@ -583,8 +573,7 @@ function showResults() {
     switchScreen('results');
 }
 
-
-// --- Funções de Gerenciamento (CRUD Local) ---
+// --- Funções de Gerenciamento (CRUD) ---
 
 function showAddItemModal() {
     elements.addItemModal.classList.add('active');
@@ -593,7 +582,7 @@ function showAddItemModal() {
 
 function renderManageList(categoryKey) {
     elements.manageTitle.textContent = `Gerenciando "${categoryKey}"`;
-    elements.manageList.innerHTML = ''; // Limpa
+    elements.manageList.innerHTML = '';
     
     const items = appData[categoryKey];
 
@@ -617,7 +606,6 @@ function renderManageList(categoryKey) {
         elements.manageList.appendChild(li);
     });
     
-    // Adiciona o botão "Adicionar Novo" no final
     const addButtonLi = document.createElement('li');
     addButtonLi.innerHTML = `<button class="add-new-item-btn-list">Adicionar Novo Item +</button>`;
     elements.manageList.appendChild(addButtonLi);
@@ -645,12 +633,10 @@ function deleteItem(index) {
     confirmModal.classList.add('active');
 
     const performDelete = () => {
-        // Remove o item do array local
         appData[currentCategoryKey].splice(index, 1);
-        saveAppData(); // Sincroniza com o Firestore
-        renderManageList(currentCategoryKey); // Re-renderiza a lista da UI
+        saveAppData();
+        renderManageList(currentCategoryKey);
 
-        // Mostra feedback
         elements.addFeedback.textContent = `"${itemToDelete.name}" foi excluído!`;
         setTimeout(() => { elements.addFeedback.textContent = ''; }, 2000);
 
@@ -667,11 +653,8 @@ function deleteItem(index) {
     cancelBtn.addEventListener('click', closeModal, { once: true });
 }
 
-/**
- * Renderiza a lista de categorias para a tela de gerenciamento.
- */
 function renderManageCategoryList() {
-    elements.manageCategoryList.innerHTML = ''; // Limpa a lista
+    elements.manageCategoryList.innerHTML = '';
     
     Object.keys(appData).forEach(categoryKey => {
         const card = document.createElement('div');
@@ -681,14 +664,12 @@ function renderManageCategoryList() {
         elements.manageCategoryList.appendChild(card);
     });
     
-     // Adiciona o botão "Adicionar Nova Categoria"
     const addButton = document.createElement('button');
     addButton.id = 'add-new-category-btn';
     addButton.className = 'manage-btn';
     addButton.textContent = 'Adicionar Nova Categoria +';
     elements.manageCategoryList.appendChild(addButton);
     
-    // Adiciona listener (reutilizável)
     if (!elements.manageCategoryList.dataset.listenerAttached) {
          elements.manageCategoryList.addEventListener('click', (e) => {
             const categoryCard = e.target.closest('.category-card-select');
@@ -697,17 +678,16 @@ function renderManageCategoryList() {
             if (categoryCard) {
                 const category = categoryCard.dataset.category;
                 if (category) {
-                    currentCategoryKey = category; // Define a categoria a ser gerenciada
+                    currentCategoryKey = category;
                     renderManageList(category);
-                    switchScreen('manageItems'); // Vai para a lista de itens
+                    switchScreen('manageItems');
                 }
             } else if (addCategoryBtn) {
-                // Usar o modal genérico para adicionar categoria
                 currentEditIndex = null;
-                currentCategoryKey = null; // Indica que é uma *nova* categoria
+                currentCategoryKey = null;
                 elements.modalTitle.textContent = `Adicionar Nova Categoria`;
                 elements.itemNameInput.placeholder = 'Nome da Categoria (Ex: Filmes)';
-                elements.itemImageInput.style.display = 'none'; // Esconde campo de imagem
+                elements.itemImageInput.style.display = 'none';
                 showAddItemModal();
             }
         });
@@ -715,9 +695,6 @@ function renderManageCategoryList() {
     }
 }
 
-/**
- * Adiciona ou Edita Categoria/Item (Função unificada)
- */
 function saveModalData() {
     const newName = elements.itemNameInput.value.trim();
     if (!newName) {
@@ -726,17 +703,15 @@ function saveModalData() {
     }
 
     if (currentCategoryKey === null) {
-        // Estamos ADICIONANDO UMA NOVA CATEGORIA
         if (appData[newName]) {
              elements.addFeedback.textContent = `Categoria "${newName}" já existe!`;
         } else {
-            appData[newName] = []; // Cria nova categoria vazia
-            saveAppData(); // Salva no Firestore
+            appData[newName] = [];
+            saveAppData();
             elements.addFeedback.textContent = `Categoria "${newName}" adicionada!`;
-            renderManageCategoryList(); // Atualiza a lista de categorias
+            renderManageCategoryList();
         }
     } else {
-        // Estamos ADICIONANDO OU EDITANDO UM ITEM
         const newImage = elements.itemImageInput.value.trim();
         const newItem = {
             name: newName,
@@ -744,15 +719,13 @@ function saveModalData() {
         };
 
         if (currentEditIndex !== null) {
-            // Editando item
             appData[currentCategoryKey][currentEditIndex] = newItem;
             elements.addFeedback.textContent = `${newName} foi atualizado!`;
         } else {
-            // Adicionando novo item
             appData[currentCategoryKey].push(newItem);
             elements.addFeedback.textContent = `${newName} foi adicionado!`;
         }
-        saveAppData(); // Salva no Firestore
+        saveAppData();
         if (screens.manageItems.classList.contains('active')) {
              renderManageList(currentCategoryKey);
         }
@@ -765,20 +738,14 @@ function saveModalData() {
     closeAddItemModal();
 }
 
-/**
- * Resetar o modal ao fechar (para modo Categoria/Item)
- */
 function closeAddItemModal() {
     elements.addItemModal.classList.remove('active');
     elements.itemNameInput.value = '';
     elements.itemImageInput.value = '';
-    // Reseta o modal para o padrão (adicionar item)
     elements.itemNameInput.placeholder = 'Nome (Ex: Tocar violão 🎸)';
     elements.itemImageInput.style.display = 'block';
     currentEditIndex = null;
-    // (currentCategoryKey é mantido)
 }
-
 
 // --- Funções de Drag (Arrastar) ---
 let isDragging = false;
@@ -796,7 +763,7 @@ function getClientX(e) {
 function dragStart(e) {
     if (isAnimating || !sessionData) return;
     const myIndex = isCreator ? sessionData.player1Index : sessionData.player2Index;
-    if (myIndex >= sessionData.itemsWithVotes.length) return; // Não arrasta se tiver terminado
+    if (myIndex >= sessionData.itemsWithVotes.length) return;
     
     isDragging = true;
     startX = getClientX(e);
@@ -832,7 +799,6 @@ function dragEnd(e) {
     currentX = 0;
 }
 
-
 // --- Inicialização do DOM ---
 document.addEventListener('DOMContentLoaded', () => {
     
@@ -846,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
         results: document.getElementById('results-screen'),
         manageCategory: document.getElementById('manage-category-screen'),
         manageItems: document.getElementById('manage-items-screen'),
-        loading: document.getElementById('loading-screen') // Tela de loading
+        loading: document.getElementById('loading-screen')
     };
     
     // Mapeia botões
@@ -863,8 +829,8 @@ document.addEventListener('DOMContentLoaded', () => {
         backToHomeFromManageCat: document.getElementById('back-to-home-from-manage-cat-btn'),
         backToManageCat: document.getElementById('back-to-manage-cat-btn'),
         logout: document.getElementById('logout-btn'),
-        confirmDelete: document.getElementById('confirm-delete-btn'), // Novo
-        cancelDelete: document.getElementById('cancel-delete-btn')   // Novo
+        confirmDelete: document.getElementById('confirm-delete-btn'),
+        cancelDelete: document.getElementById('cancel-delete-btn')
     };
 
     // Mapeia outros elementos
@@ -873,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         passwordInput: document.getElementById('password-input'),
         loadingMessage: document.getElementById('loading-message'),
         sessionInput: document.getElementById('session-id-input'),
-        userStatus: document.getElementById('user-status'), // Novo elemento
+        userStatus: document.getElementById('user-status'),
         categorySelectList: document.getElementById('category-select-list'),
         lobbyStatus: document.getElementById('lobby-status'),
         sessionIdDisplay: document.getElementById('session-id-display'),
@@ -910,10 +876,10 @@ document.addEventListener('DOMContentLoaded', () => {
         renderManageCategoryList();
         switchScreen('manageCategory');
     });
-    buttons.logout.addEventListener('click', handleLogout); // Adiciona listener para logout
+    buttons.logout.addEventListener('click', handleLogout);
     
-    // Botões do Modal (Adicionar/Editar Item/Categoria)
-    buttons.saveItem.addEventListener('click', saveModalData); // Função unificada
+    // Botões do Modal
+    buttons.saveItem.addEventListener('click', saveModalData);
     buttons.cancelAdd.addEventListener('click', closeAddItemModal);
     elements.addItemModal.addEventListener('click', (e) => {
         if (e.target === elements.addItemModal) closeAddItemModal();
@@ -925,14 +891,14 @@ document.addEventListener('DOMContentLoaded', () => {
     buttons.like.addEventListener('click', () => handleSwipe('like'));
     buttons.dislike.addEventListener('click', () => handleSwipe('dislike'));
 
-    // Botão "Recomeçar" (Tela de Resultados)
+    // Botão "Recomeçar"
     buttons.restart.addEventListener('click', leaveSession);
     
-    // Botões de Navegação (Gerenciamento)
+    // Botões de Navegação
     buttons.backToHomeFromManageCat.addEventListener('click', () => switchScreen('home'));
     buttons.backToManageCat.addEventListener('click', () => switchScreen('manageCategory'));
 
-    // Listeners da Lista de Gerenciamento (Itens)
+    // Listeners da Lista de Gerenciamento
     elements.manageList.addEventListener('click', (e) => {
         const editButton = e.target.closest('.edit-btn');
         const deleteButton = e.target.closest('.delete-btn');
@@ -954,15 +920,13 @@ document.addEventListener('DOMContentLoaded', () => {
             currentEditIndex = null; 
             elements.itemNameInput.value = '';
             elements.itemImageInput.value = '';
-            // Garante que o modal está no modo "item"
             elements.itemNameInput.placeholder = 'Nome (Ex: Tocar violão 🎸)';
             elements.itemImageInput.style.display = 'block';
             showAddItemModal();
         }
     });
     
-
-    // --- Listeners para o Arraste (Drag) ---
+    // Listeners para o Arraste
     elements.itemCard.addEventListener('mousedown', dragStart);
     document.addEventListener('mousemove', dragMove); 
     document.addEventListener('mouseup', dragEnd); 
@@ -970,6 +934,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('touchmove', dragMove, { passive: false }); 
     document.addEventListener('touchend', dragEnd); 
 
-    // --- Inicialização ---
+    // Inicialização
     initializeAppFirebase();
 });
