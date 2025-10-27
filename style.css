@@ -1,0 +1,594 @@
+/* --- Reset Básico e Padrões --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Evita scroll da página */
+    background-color: #f4f4f9; /* Fundo cinza suave */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Contêiner Principal --- */
+.app-container {
+    width: 100%;
+    height: 100%;
+    max-width: 420px; /* Limite de largura (ótimo para mobile-first) */
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Garante que nada transborde */
+    position: relative;
+}
+
+/* Em telas maiores, mostra como um "celular" */
+@media (min-width: 450px) {
+    .app-container {
+        max-height: 850px;
+        height: calc(100% - 40px);
+        margin: 20px auto;
+        border-radius: 24px;
+        border: 1px solid #e0e0e0;
+    }
+}
+
+/* --- Estrutura das Telas --- */
+.screen {
+    display: none; /* Oculta todas as telas por padrão */
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem;
+    overflow-y: auto; /* Permite scroll interno se necessário */
+    overflow-x: hidden;
+    background-color: #ffffff;
+    position: relative;
+}
+
+.screen.active {
+    display: flex; /* Mostra a tela ativa */
+}
+
+/* --- Tela de Login (NOVA) --- */
+#login-screen {
+    justify-content: center;
+    text-align: center;
+    gap: 1.5rem;
+}
+
+.login-form {
+    width: 100%;
+    padding: 1.5rem;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background: #fdfdfd;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+.error-message {
+    color: #F44336;
+    font-weight: 600;
+    min-height: 1.2rem;
+}
+/* --- Tela Inicial (Home) - REFEITA --- */
+#home-screen {
+    text-align: center;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+#home-screen h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: #333;
+    margin-bottom: 0;
+}
+
+/* Contêiner para Ações da Sessão */
+.session-controls {
+    width: 100%;
+    padding: 1.5rem;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    background: #fdfdfd;
+}
+
+.session-controls h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+#session-id-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    font-size: 1.2rem;
+    text-align: center;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-family: inherit;
+    text-transform: uppercase;
+}
+
+#session-id-input::placeholder {
+    text-transform: none;
+}
+
+.session-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Botão de Gerenciar (agora na home) */
+#open-manage-btn {
+    background-color: #6c757d;
+    color: white;
+    width: 100%;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+ #open-manage-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Mensagem de Loading/Erro na Home */
+#loading-message {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #555;
+    min-height: 1.2rem;
+    /* display: none; é controlado por JS */
+}
+
+/* Feedback de Adicionar/Excluir Item */
+ #add-feedback {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4CAF50;
+    min-height: 1.2rem;
+    transition: color 0.3s ease;
+ }
+
+
+/* --- Tela de Seleção de Categoria (NOVA) --- */
+#category-select-screen {
+    justify-content: flex-start;
+    text-align: center;
+}
+#category-select-screen h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+#category-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+.category-card-select {
+    background: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.category-card-select:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    background-color: #fff;
+}
+
+/* --- Tela de Lobby (NOVA) --- */
+#lobby-screen {
+    justify-content: center;
+    text-align: center;
+    gap: 1.5rem;
+}
+#lobby-screen h2 {
+    font-size: 1.75rem;
+}
+#session-id-display {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #007bff;
+    background: #f4f4f9;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px dashed #ccc;
+    letter-spacing: 2px;
+}
+#lobby-status {
+    font-size: 1.1rem;
+    color: #555;
+    min-height: 2.5rem;
+}
+#lobby-user-id {
+    font-size: 0.8rem;
+    color: #999;
+    word-break: break-all;
+}
+
+/* --- Tela de Swipe --- */
+#swipe-screen {
+    justify-content: center; /* Centraliza verticalmente o grupo */
+    align-items: center; /* Centraliza horizontalmente */
+    text-align: center;
+    padding: 1.5rem;
+    gap: 2rem; /* Espaço entre card e botões */
+    overflow: hidden; /* Impede que o card vaze durante a animação */
+}
+.card-container {
+    width: 100%;
+    height: 60%; /* Ocupa 60% da altura da tela */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    perspective: 1000px;
+}
+.card {
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative; /* Para animações */
+    cursor: grab;
+    transition: transform 0.4s ease-out, opacity 0.4s ease-out; /* Para o "soltar" */
+}
+
+/* Animações de entrada/saída */
+.card.slide-in {
+    opacity: 0;
+    transform: scale(0.95);
+}
+.card.slide-out-left {
+    opacity: 0;
+    transform: translateX(-150%) rotate(-30deg) !important;
+}
+.card.slide-out-right {
+    opacity: 0;
+    transform: translateX(150%) rotate(30deg) !important;
+}
+
+#item-image {
+    width: 100%;
+    height: 100%; /* Ocupa todo o espaço do card */
+    object-fit: cover; /* Garante que a imagem cubra */
+}
+#item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 700;
+    padding: 2rem 1.5rem 1.5rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.swipe-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+}
+.swipe-btn {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease-out;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.swipe-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+#dislike-btn:hover {
+    background-color: #FFF0F0;
+    border-color: #FFCDCD;
+}
+#like-btn:hover {
+    background-color: #F0FFF3;
+    border-color: #C1E1C1;
+}
+
+/* --- Tela de Resultados --- */
+#results-screen {
+    justify-content: flex-start;
+    text-align: center;
+}
+#results-screen h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+}
+#no-matches-msg {
+    font-size: 1.2rem;
+    color: #777;
+}
+#liked-list {
+    list-style-type: none;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+#liked-list li {
+    display: flex;
+    align-items: center;
+    background: #f9f9f9;
+    border-radius: 10px;
+    padding: 0.75rem;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.result-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-right: 1rem;
+    background-color: #eee;
+}
+#liked-list li span {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+}
+#restart-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: auto; /* Empurra para baixo */
+}
+#restart-btn:hover {
+    background-color: #0056b3;
+}
+
+/* --- Tela de Gerenciamento (REFEITA) --- */
+#manage-category-screen {
+    justify-content: flex-start;
+    text-align: center;
+}
+#manage-category-screen h2 {
+     font-size: 1.75rem;
+     margin-bottom: 1.5rem;
+}
+#manage-category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+#manage-items-screen {
+    justify-content: flex-start;
+}
+#manage-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+#manage-list {
+    list-style-type: none;
+    width: 100%;
+    background: #fdfdfd;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Botão para adicionar item */
+.add-new-item-btn-list {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: #f9f9f9;
+    border: none;
+    border-top: 1px solid #eee;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #007bff;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+ .add-new-item-btn-list:hover {
+    background: #f0f8ff;
+ }
+
+.manage-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+.manage-item:last-child {
+    border-bottom: none;
+}
+.manage-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+    margin-right: 1rem;
+    background-color: #eee;
+}
+.manage-item-name {
+    flex-grow: 1;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+}
+.manage-item-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+.edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: transform 0.2s ease;
+}
+.edit-btn:hover, .delete-btn:hover {
+    transform: scale(1.2);
+}
+
+/* Botão de Voltar (NOVO) */
+#back-to-home-from-manage-cat-btn,
+#back-to-manage-cat-btn {
+    background-color: #6c757d; /* Cinza escuro */
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin-top: auto; /* Empurra para baixo */
+}
+ #back-to-home-from-manage-cat-btn:hover,
+ #back-to-manage-cat-btn:hover {
+    background-color: #5a6268;
+ }
+ 
+/* Botão de Adicionar Nova Categoria */
+#add-new-category-btn {
+     margin-top: 1rem;
+}
+
+/* --- Estilos Gerais de Botões --- */
+.start-btn, .manage-btn {
+    background-color: #007bff; /* Azul */
+    color: white;
+    border: none;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+.start-btn:hover, .manage-btn:hover {
+    background-color: #0056b3;
+}
+.secondary-btn {
+    background-color: #6c757d; /* Cinza */
+}
+.secondary-btn:hover {
+    background-color: #5a6268;
+}
+
+/* --- Modal (Popup) --- */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.modal-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+.modal-content {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transform: scale(0.95);
+    transition: transform 0.3s ease;
+}
+.modal-overlay.active .modal-content {
+    transform: scale(1);
+}
+.modal-content h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+.modal-content input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+}
+.modal-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
