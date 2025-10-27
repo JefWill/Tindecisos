@@ -33,8 +33,12 @@ jobs:
       # 2. Cria o arquivo firebase-config.js usando o segredo
       - name: Create Firebase config file
         run: |
-          mkdir -p js
-          echo "const firebaseConfig = { ${{ secrets.FIREBASE_CONFIG }} };" > js/firebase-config.js
+          cat <<EOF > js/firebase-config.js
+          // Arquivo gerado automaticamente pelo GitHub Actions
+          const firebaseConfig = {
+            ${{ secrets.FIREBASE_CONFIG }}
+          };
+          EOF
 
       # 3. Configura o ambiente para o deploy no GitHub Pages
       - name: Setup Pages
