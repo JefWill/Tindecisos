@@ -247,7 +247,7 @@ async function createSession() {
         await setDoc(sessionRef, newSessionData);
         
         // Inicia o listener que reagirá a mudanças na sessão.
-        await listenToSession(currentSessionId);
+        listenToSession(currentSessionId);
         // O listener, na sua primeira execução, nos levará para a tela de Lobby.
 
     } catch (error) {

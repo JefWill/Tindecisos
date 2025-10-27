@@ -217,21 +217,6 @@ input[type="password"]:focus {
     flex-direction: column;
     gap: 0.5rem;
 }
-/* Botão Gerenciar e Sair agora são secundários */
-#open-manage-btn, #logout-btn {
-    background-color: var(--surface);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
-}
-#open-manage-btn:hover, #logout-btn:hover {
-    background-color: var(--background);
-    border-color: var(--border);
-    color: var(--text-primary);
-    box-shadow: none;
-    transform: none;
-}
 #loading-message {
     font-size: 1rem;
     font-weight: 600;
