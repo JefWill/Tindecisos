@@ -21,10 +21,12 @@
     <!-- O contêiner principal que centraliza o app -->
     <div class="app-container">
         
-        <!-- Tela de Loading Inicial (NOVA) -->
-        <div class="screen active" id="loading-screen"><p id="loading-message" style="font-size: 1.1rem; color: #555;">Conectando...</p></div>
+        <!-- Tela de Loading Inicial -->
+        <div class="screen active" id="loading-screen">
+            <p id="loading-message" style="font-size: 1.1rem; color: #555;">Conectando...</p>
+        </div>
 
-        <!-- Tela de Login (NOVA) -->
+        <!-- Tela de Login -->
         <div class="screen" id="login-screen">
             <div class="logo-container"></div>
             <div class="login-form">
@@ -36,15 +38,14 @@
             </div>
         </div>
 
-
-        <!-- Tela 1: Inicial (Sessão) - REFEITA -->
+        <!-- Tela Inicial (Home/Sessão) -->
         <div class="screen" id="home-screen">
             <div class="logo-container"></div>
             <p id="user-status" style="display: none;"></p>
             
             <div class="session-controls">
                 <h2>Entrar em Sessão</h2>
-                <input type="text" id="session-id-input" placeholder="ID da Sessão (6 letras)">
+                <input type="text" id="session-id-input" placeholder="ID da Sessão (6 letras)" maxlength="6">
                 <div class="session-buttons">
                     <button id="join-session-btn" class="start-btn secondary-btn">Entrar</button>
                     <button id="create-session-btn" class="start-btn">Criar Nova Sessão</button>
@@ -54,31 +55,30 @@
             <button id="open-manage-btn">Gerenciar Minhas Listas</button>
             <button id="logout-btn" class="secondary-btn" style="margin-top: 0.5rem;">Sair</button>
             <p class="error-message" id="home-error-message" style="display: none;"></p>
-            
             <p id="add-feedback"></p>
         </div>
 
-        <!-- Tela 2: Seleção de Categoria (NOVA, para o Criador) -->
+        <!-- Tela de Seleção de Categoria (para o Criador) -->
         <div class="screen" id="category-select-screen">
+            <div class="logo-container"></div>
             <h2>Escolha uma Categoria</h2>
             <div id="category-select-list">
                 <!-- Lista de categorias preenchida por JS -->
             </div>
-            <!-- (Botão de voltar pode ser adicionado aqui) -->
+            <button id="back-to-home-from-category" class="secondary-btn" style="margin-top: 1rem;">Voltar</button>
         </div>
         
-        <!-- Tela 3: Lobby (NOVA, para aguardar) -->
+        <!-- Tela de Lobby (aguardar jogador 2) -->
         <div class="screen" id="lobby-screen">
+            <div class="logo-container"></div>
             <h2>ID da Sessão:</h2>
             <p id="session-id-display">ABC123</p>
-            <p>Compartilhe este ID com o outro jogador para começar!</p>
+            <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 1rem;">Compartilhe este ID com o outro jogador para começar!</p>
             <p id="lobby-status">Aguardando jogador 2...</p>
-            <p id="lobby-user-id" style="margin-top: 2rem;"></p>
-            <!-- (Botão de cancelar pode ser adicionado aqui) -->
+            <button id="cancel-lobby-btn" class="secondary-btn" style="margin-top: 2rem;">Cancelar Sessão</button>
         </div>
 
-
-        <!-- Tela 4: Swipe (Antiga Tela 2) -->
+        <!-- Tela de Swipe -->
         <div class="screen" id="swipe-screen">
             <div class="card-container">
                 <div class="card" id="item-card">
@@ -87,15 +87,16 @@
                 </div>
             </div>
             
-            <!-- Botões de Like/Dislike (RE-ADICIONADOS) -->
+            <!-- Botões de Like/Dislike -->
             <div class="swipe-buttons">
                 <button id="dislike-btn" class="swipe-btn" aria-label="Descartar">❌</button>
                 <button id="like-btn" class="swipe-btn" aria-label="Curtir">❤️</button>
             </div>
         </div>
 
-        <!-- Tela 5: Resultados (Antiga Tela 3) (RE-ADICIONADA) -->
+        <!-- Tela de Resultados -->
         <div class="screen" id="results-screen">
+            <div class="logo-container"></div>
             <h2>Match Encontrado! 🎉</h2>
             <p id="no-matches-msg" style="display: none;">Nenhuma combinação encontrada 😢</p>
             
@@ -106,24 +107,25 @@
             <button id="restart-btn">Sair da Sessão</button>
         </div>
 
-        <!-- Tela 6: Gerenciamento - Categorias -->
+        <!-- Tela de Gerenciamento - Categorias -->
         <div class="screen" id="manage-category-screen">
+            <div class="logo-container"></div>
             <h2>Gerenciar Listas</h2>
             <p style="font-size: 0.9rem; color: #777; margin-bottom: 1.5rem;">(Estas listas são sincronizadas entre todos os usuários)</p>
             <div id="manage-category-list">
                 <!-- Lista de categorias para gerenciar, preenchida por JS -->
             </div>
-            <button id="back-to-home-from-manage-cat-btn" style="margin-top: 1.5rem;">Voltar</button>
+            <button id="back-to-home-from-manage-cat-btn" class="secondary-btn" style="margin-top: 1.5rem;">Voltar</button>
         </div>
         
-        <!-- Tela 7: Gerenciamento - Itens -->
+        <!-- Tela de Gerenciamento - Itens -->
         <div class="screen" id="manage-items-screen">
+            <div class="logo-container"></div>
             <h2 id="manage-title">Gerenciar Itens</h2>
             <ul id="manage-list">
                 <!-- Itens da lista serão preenchidos pelo JavaScript -->
-                 <!-- Botão de adicionar item é adicionado via JS -->
             </ul>
-            <button id="back-to-manage-cat-btn">Voltar</button>
+            <button id="back-to-manage-cat-btn" class="secondary-btn" style="margin-top: 1.5rem;">Voltar</button>
         </div>
 
     </div> <!-- Fim do app-container -->
@@ -131,7 +133,6 @@
     <!-- Modal (Popup) para Adicionar/Editar Itens/Categorias -->
     <div id="item-modal" class="modal-overlay">
         <div class="modal-content">
-            <!-- Título do modal agora é dinâmico -->
             <h3 id="item-modal-title">Adicionar Novo Item</h3>
             <input type="text" id="item-name-input" placeholder="Nome (Ex: Tocar violão 🎸)">
             <input type="text" id="item-image-input" placeholder="URL da Imagem (Opcional)">
@@ -139,10 +140,10 @@
                 <button id="cancel-add-btn" class="secondary-btn manage-btn">Cancelar</button>
                 <button id="save-item-btn" class="manage-btn">Salvar</button>
             </div>
-        </div> <!-- Fim do modal-content -->
-    </div> <!-- Fim do item-modal -->
+        </div>
+    </div>
 
-    <!-- Modal de Confirmação para Exclusão (NOVO) -->
+    <!-- Modal de Confirmação para Exclusão -->
     <div id="confirm-modal" class="modal-overlay">
         <div class="modal-content">
             <h3 id="confirm-modal-title">Confirmar Exclusão</h3>
