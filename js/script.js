@@ -116,6 +116,7 @@ async function initializeAppFirebase() {
                     if (elements.userStatus) {
                         elements.userStatus.textContent = `Conectado como: ${user.email}`;
                     }
+                    // Inicia o listener para os dados do app (listas) APÓS autenticação
                     listenToAppData(); 
                     console.log("Usuário autorizado autenticado:", user.email, "| UserID:", userId);
                     elements.loadingMessage.style.display = 'none';
@@ -307,85 +308,77 @@ async function joinSession() {
  * Este é o coração do app multiplayer.
  */
 function listenToSession(sessionId) {
-    // Cancela listener antigo
-    if (sessionUnsubscribe) {
-        sessionUnsubscribe();
-    }
-
     const sessionRef = doc(db, `tindecisos-sessions/${sessionId}`);
-
+    
     sessionUnsubscribe = onSnapshot(sessionRef, (docSnap) => {
         if (!docSnap.exists()) {
             showError("A sessão foi encerrada ou não existe mais.");
             leaveSession();
             return;
         }
-
+        
         sessionData = docSnap.data();
         console.log("Dados da sessão atualizados:", sessionData);
 
+        // --- Roteamento de Tela baseado no Estado da Sessão ---
         const currentScreen = document.querySelector('.screen.active');
         const currentScreenId = currentScreen ? currentScreen.id : null;
 
 
-        // --- 1) RESULTADOS ---
-        if (sessionData.player1Done && sessionData.player2Done) {
+        // 1. Ambos jogadores terminaram? Mostrar Resultados.
+        if (sessionData.player1Done && sessionData.player2Done) { 
             if (currentScreenId !== 'results-screen') {
                 showResults();
             }
             return;
         }
 
-
-        // --- 2) SWIPE EM ANDAMENTO (categoria já escolhida) ---
+        // 2. O swipe está em progresso? (Categoria já foi escolhida)
         if (sessionData.categoryName) {
-
-            // GUARDA: se o array ainda não sincronizou
+            // GUARDA: Não tente mostrar o card se a lista de itens da sessão ainda não foi sincronizada.
             if (!sessionData.itemsWithVotes || sessionData.itemsWithVotes.length === 0) {
-                console.warn("Categoria já setada mas items ainda não chegaram no snapshot");
+                console.warn("Categoria definida, mas 'itemsWithVotes' ainda não sincronizado. Aguardando...");
                 return;
             }
 
             if (currentScreenId !== 'swipe-screen') {
                 switchScreen('swipe');
-                showNextCard();
+                showNextCard(); // Carrega o card correto
             }
             return;
         }
 
-
-        // --- 3) JOINER ENTROU — ir pra seleção de categoria (CRIADOR) ou LOBBY (JOGADOR 2) ---
+        // 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
         if (sessionData.joinerId) {
-
-            // GUARDA: não entrar na seleção antes do appData estar carregado
+            // GUARDA: Não tente renderizar a seleção de categoria se os dados do app (appData) ainda não carregaram.
             if (!appData || Object.keys(appData).length === 0) {
-                console.warn("appData ainda não carregou — aguardando...");
+                console.warn("Joiner conectado, mas 'appData' ainda não está pronto. Aguardando...");
+                // Opcional: Mostrar uma mensagem de "Carregando listas..." no lobby.
                 return;
             }
 
+            // Jogador 2 entrou. Se eu sou o criador, vou para a seleção de categoria.
             if (isCreator) {
                 if (currentScreenId !== 'category-select-screen') {
                     renderCategorySelection();
                     switchScreen('category-select-screen');
                 }
-            } else {
+            } else { // Se eu sou o jogador 2, continuo no lobby esperando.
                 if (currentScreenId !== 'lobby-screen') {
                     switchScreen('lobby');
                 }
-                updateLobbyStatus(true);
+                updateLobbyStatus(true); // true = jogador 2 conectado
             }
             return;
         }
 
-
-        // --- 4) LOBBY ESPERANDO JOINER ---
+        // 4. Estado Padrão: Ninguém entrou ainda, ambos aguardam no Lobby.
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
         }
-        updateLobbyStatus(false);
+        updateLobbyStatus(false); // false = aguardando
     });
 }
-
 /**
  * O Criador seleciona uma categoria e a salva na sessão.
  */
@@ -421,11 +414,15 @@ async function selectCategoryForSession(categoryKey) {
 /**
  * Atualiza a UI do Lobby (aguardando jogador)
  */
-function updateLobbyStatus(isJoinerConnected) {
+function updateLobbyStatus(isJoinerConnected, customMessage = "") {
     elements.sessionIdDisplay.textContent = currentSessionId;
-    elements.lobbyStatus.textContent = isJoinerConnected 
-        ? "Jogador 2 conectado! O criador está escolhendo a categoria..."
-        : "Aguardando outro jogador entrar...";
+    if (customMessage) {
+        elements.lobbyStatus.textContent = customMessage;
+    } else {
+        elements.lobbyStatus.textContent = isJoinerConnected 
+            ? "Jogador 2 conectado! O criador está escolhendo a categoria..."
+            : "Aguardando outro jogador entrar...";
+    }
 }
 
 /**
@@ -702,17 +699,36 @@ function openEditModal(index) {
 }
 
 function deleteItem(index) {
-    // TODO: Adicionar um modal de confirmação customizado
-    const itemName = appData[currentCategoryKey][index].name;
-    appData[currentCategoryKey].splice(index, 1);
-    saveAppData(); // Salva no Firestore
-    renderManageList(currentCategoryKey); // Re-renderiza a lista
-    
-    // Mostra feedback na tela principal (home)
-    elements.addFeedback.textContent = `${itemName} foi excluído!`;
-    setTimeout(() => {
-        elements.addFeedback.textContent = '';
-    }, 2000);
+    const itemToDelete = appData[currentCategoryKey][index];
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmText = document.getElementById('confirm-modal-text');
+    const confirmBtn = document.getElementById('confirm-delete-btn');
+    const cancelBtn = document.getElementById('cancel-delete-btn');
+
+    confirmText.innerHTML = `Você tem certeza de que deseja excluir "<strong>${itemToDelete.name}</strong>"? Esta ação não pode ser desfeita.`;
+    confirmModal.classList.add('active');
+
+    const performDelete = () => {
+        // Remove o item do array local
+        appData[currentCategoryKey].splice(index, 1);
+        saveAppData(); // Sincroniza com o Firestore
+        renderManageList(currentCategoryKey); // Re-renderiza a lista da UI
+
+        // Mostra feedback
+        elements.addFeedback.textContent = `"${itemToDelete.name}" foi excluído!`;
+        setTimeout(() => { elements.addFeedback.textContent = ''; }, 2000);
+
+        closeModal();
+    };
+
+    const closeModal = () => {
+        confirmModal.classList.remove('active');
+        confirmBtn.removeEventListener('click', performDelete);
+        cancelBtn.removeEventListener('click', closeModal);
+    };
+
+    confirmBtn.addEventListener('click', performDelete, { once: true });
+    cancelBtn.addEventListener('click', closeModal, { once: true });
 }
 
 /**
@@ -910,7 +926,9 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelAdd: document.getElementById('cancel-add-btn'),
         backToHomeFromManageCat: document.getElementById('back-to-home-from-manage-cat-btn'),
         backToManageCat: document.getElementById('back-to-manage-cat-btn'),
-        logout: document.getElementById('logout-btn') // Novo botão
+        logout: document.getElementById('logout-btn'),
+        confirmDelete: document.getElementById('confirm-delete-btn'), // Novo
+        cancelDelete: document.getElementById('cancel-delete-btn')   // Novo
     };
 
     // Mapeia outros elementos
