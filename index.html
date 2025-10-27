@@ -32,7 +32,7 @@
 
         // --- Lista de Usuários Autorizados ---
         const allowedEmails = [
-            "jeffersonsenarn@gmai.com",       // <-- TROQUE PELO SEU E-MAIL
+            "jeffersonsenarn@gmail.com",       // <-- TROQUE PELO SEU E-MAIL
             "jessicaminern@gmail.com",          // <-- COLOQUE OS E-MAILS REAIS AQUI
             "jeffersonwillamern@gmail.com"
         ];
@@ -232,9 +232,8 @@
                 elements.loadingMessage.style.display = 'none';
                 
                 // Inicia o listener e vai para a seleção de categoria
+                // AGORA VAI PARA O LOBBY PRIMEIRO
                 listenToSession(currentSessionId);
-                renderCategorySelection();
-                switchScreen('categorySelect');
 
             } catch (error) {
                 console.error("Erro ao criar sessão:", error);
@@ -341,29 +340,27 @@
 
                 // 3. Estamos no Lobby (Alguém entrou, mas categoria não escolhida)
                 if (sessionData.joinerId) {
-                    // Estamos no lobby e o jogador 2 entrou
-                    if (currentScreenId !== 'lobby-screen' && currentScreenId !== 'category-select-screen') {
-                        switchScreen('lobby');
+                    // Jogador 2 entrou. Se eu sou o criador, vou para a seleção de categoria.
+                    if (isCreator) {
+                        if (currentScreenId !== 'category-select-screen') {
+                            renderCategorySelection();
+                            switchScreen('categorySelect');
+                        }
+                    } else {
+                        // Se eu sou o jogador 2, continuo no lobby esperando o criador escolher.
+                        if (currentScreenId !== 'lobby-screen') {
+                            switchScreen('lobby');
+                        }
+                        updateLobbyStatus(true); // true = jogador 2 conectado
                     }
-                    updateLobbyStatus(true); // true = jogador 2 conectado
                     return;
                 }
 
-                // 4. Estamos no Lobby (Criador ainda não escolheu / Jogador 2 não entrou)
-                if (isCreator && !sessionData.categoryName) {
-                    // O criador está na tela de seleção de categoria
-                    if (currentScreenId !== 'category-select-screen') {
-                         renderCategorySelection();
-                         switchScreen('categorySelect');
-                    }
-                    return;
-                } else {
-                    // O jogador 2 está esperando
-                    if (currentScreenId !== 'lobby-screen') {
-                         switchScreen('lobby');
-                    }
-                    updateLobbyStatus(false); // false = aguardando
+                // 4. Ninguém entrou ainda, ambos aguardam no Lobby.
+                if (currentScreenId !== 'lobby-screen') {
+                    switchScreen('lobby');
                 }
+                updateLobbyStatus(false); // false = aguardando
             });
         }
 
