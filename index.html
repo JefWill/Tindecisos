@@ -1007,11 +1007,11 @@
         /* --- Reset Básico e Padrões --- */
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            margin: 0; 
+            padding: 0; 
             -webkit-tap-highlight-color: transparent; /* Remove highlight azul no mobile */
         }
-
+ 
         html, body {
             height: 100%;
             width: 100%;
@@ -1021,7 +1021,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-
+ 
         /* --- Contêiner Principal --- */
         .app-container {
             width: 100%;
@@ -1036,7 +1036,7 @@
             overflow: hidden; /* Garante que nada transborde */
             position: relative;
         }
-        
+         
         /* Em telas maiores, mostra como um "celular" */
         @media (min-width: 450px) {
             .app-container {
@@ -1047,7 +1047,7 @@
                 border: 1px solid #e0e0e0;
             }
         }
-
+ 
         /* --- Estrutura das Telas --- */
         .screen {
             display: none; /* Oculta todas as telas por padrão */
@@ -1060,18 +1060,18 @@
             background-color: #ffffff;
             position: relative;
         }
-
+ 
         .screen.active {
             display: flex; /* Mostra a tela ativa */
         }
-
+ 
         /* --- Tela de Login (NOVA) --- */
         #login-screen {
             justify-content: center;
             text-align: center;
             gap: 1.5rem;
         }
-
+ 
         .login-form {
             width: 100%;
             padding: 1.5rem;
@@ -1081,7 +1081,7 @@
             display: flex;
             flex-direction: column;
             gap: 1rem;
-        }
+        } 
 
         .login-form input {
             width: 100%;
@@ -1091,26 +1091,37 @@
             border-radius: 8px;
             font-family: inherit;
         }
-
+ 
         .error-message {
             color: #F44336;
             font-weight: 600;
             min-height: 1.2rem;
         }
+        
+        /* --- SVG Logo --- */
+        .logo-svg {
+            width: 120px;
+            height: auto;
+            margin: 0 auto 1rem;
+        }
+
         /* --- Tela Inicial (Home) - REFEITA --- */
         #home-screen {
             text-align: center;
             justify-content: center;
             gap: 1.5rem;
         }
-
+ 
         #home-screen h1 {
             font-size: 3.5rem;
             font-weight: 800;
             color: #333;
             margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
+         
         /* Contêiner para Ações da Sessão */
         .session-controls {
             width: 100%;
@@ -1118,7 +1129,7 @@
             border: 1px solid #eee;
             border-radius: 12px;
             background: #fdfdfd;
-        }
+        } 
         
         .session-controls h2 {
             font-size: 1.5rem;
@@ -1126,7 +1137,7 @@
             color: #333;
             margin-bottom: 1.5rem;
         }
-
+ 
         #session-id-input {
             width: 100%;
             padding: 0.8rem 1rem;
@@ -1138,20 +1149,20 @@
             font-family: inherit;
             text-transform: uppercase;
         }
-        
+         
         #session-id-input::placeholder {
             text-transform: none;
         }
-
+ 
         .session-buttons {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
-        
+         
         /* Botão de Gerenciar (agora na home) */
         #open-manage-btn {
-            background-color: #6c757d;
+            background-color: #E6A4B4; /* Rosa secundário */
             color: white;
             width: 100%;
             border: none;
@@ -1163,16 +1174,16 @@
             transition: all 0.2s ease;
         }
          #open-manage-btn:hover {
-            background-color: #5a6268;
+            background-color: #D689A0;
         }
-        
+         
         /* Mensagem de Loading/Erro na Home */
         #loading-message {
             font-size: 1rem;
             font-weight: 600;
             color: #555;
             min-height: 1.2rem;
-            display: none; /* Começa escondido */
+            display: none; /* Começa escondido */ 
         }
         
         /* Feedback de Adicionar/Excluir Item */
@@ -1183,7 +1194,7 @@
             min-height: 1.2rem;
             transition: color 0.3s ease;
          }
-        
+         
 
         /* --- Tela de Seleção de Categoria (NOVA) --- */
         #category-select-screen {
@@ -1214,7 +1225,7 @@
         .category-card-select:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            background-color: #fff;
+            background-color: #FFF8F9;
         }
 
         /* --- Tela de Lobby (NOVA) --- */
@@ -1228,8 +1239,8 @@
         }
         #session-id-display {
             font-size: 2.5rem;
-            font-weight: 700;
-            color: #007bff;
+            font-weight: 700; 
+            color: #F38181; /* Rosa principal */
             background: #f4f4f9;
             padding: 1rem;
             border-radius: 8px;
@@ -1334,11 +1345,11 @@
             transform: scale(1.1);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
         }
-        #dislike-btn:hover {
-            background-color: #FFF0F0;
-            border-color: #FFCDCD;
-        }
         #like-btn:hover {
+            background-color: #FFE3E1;
+            border-color: #F38181;
+        }
+        #dislike-btn:hover {
             background-color: #F0FFF3;
             border-color: #C1E1C1;
         }
@@ -1388,7 +1399,7 @@
             color: #333;
         }
         #restart-btn {
-            background-color: #007bff;
+            background-color: #F38181; /* Rosa principal */
             color: white;
             border: none;
             padding: 1rem;
@@ -1401,7 +1412,7 @@
             margin-top: auto; /* Empurra para baixo */
         }
         #restart-btn:hover {
-            background-color: #0056b3;
+            background-color: #E96464;
         }
 
         /* --- Tela de Gerenciamento (REFEITA) --- */
@@ -1449,11 +1460,11 @@
             border-top: 1px solid #eee;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #007bff;
+            color: #F38181; /* Rosa principal */
             cursor: pointer;
             transition: background 0.2s ease;
         }
-         .add-new-item-btn-list:hover {
+         .add-new-item-btn-list:hover { 
             background: #f0f8ff;
          }
 
@@ -1499,7 +1510,7 @@
         /* Botão de Voltar (NOVO) */
         #back-to-home-from-manage-cat-btn,
         #back-to-manage-cat-btn {
-            background-color: #6c757d; /* Cinza escuro */
+            background-color: #E6A4B4; /* Rosa secundário */
             color: white;
             border: none;
             padding: 1rem;
@@ -1513,7 +1524,7 @@
         }
          #back-to-home-from-manage-cat-btn:hover,
          #back-to-manage-cat-btn:hover {
-            background-color: #5a6268;
+            background-color: #D689A0;
          }
          
         /* Botão de Adicionar Nova Categoria */
@@ -1523,7 +1534,7 @@
 
         /* --- Estilos Gerais de Botões --- */
         .start-btn, .manage-btn {
-            background-color: #007bff; /* Azul */
+            background-color: #F38181; /* Rosa principal */
             color: white;
             border: none;
             padding: 1rem;
@@ -1535,13 +1546,13 @@
             width: 100%;
         }
         .start-btn:hover, .manage-btn:hover {
-            background-color: #0056b3;
+            background-color: #E96464; /* Rosa mais escuro */
         }
         .secondary-btn {
-            background-color: #6c757d; /* Cinza */
+            background-color: #E6A4B4; /* Rosa secundário */
         }
         .secondary-btn:hover {
-            background-color: #5a6268;
+            background-color: #D689A0;
         }
 
         /* --- Modal (Popup) --- */
@@ -1609,7 +1620,17 @@
         
         <!-- Tela de Loading Inicial (NOVA) -->
         <div class="screen active" id="loading-screen">
-            <h1 style="font-size: 3.5rem; font-weight: 800; color: #333; margin-bottom: 1.5rem;">Tindecisos</h1>
+            <!-- Logo SVG -->
+            <svg class="logo-svg" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#F9A1A1;" />
+                        <stop offset="100%" style="stop-color:#F38181;" />
+                    </linearGradient>
+                </defs>
+                <path fill="url(#logoGradient)" d="M35.25,5.13c-11.5,0-20.83,9.33-20.83,20.83c0,10.5,7.75,19.2,17.92,20.67l-0.16,10.17c-0.02,1.63,1.3,2.95,2.93,2.95h3.33c1.63,0,2.95-1.32,2.93-2.95l-0.16-10.17c10.17-1.47,17.92-9.17,17.92-20.67C56.08,14.46,46.75,5.13,35.25,5.13z"/>
+                <text x="34.5" y="38" font-family="Inter, sans-serif" font-size="24" font-weight="800" fill="#FFFFFF" text-anchor="middle">?</text>
+            </svg>
             <p id="loading-message" style="font-size: 1.1rem; color: #555;">Conectando...</p>
         </div>
 
@@ -1628,13 +1649,25 @@
 
         <!-- Tela 1: Inicial (Sessão) - REFEITA -->
         <div class="screen" id="home-screen">
-            <h1>Tindecisos</h1>
+            <h1>
+                <!-- Logo SVG -->
+                <svg class="logo-svg" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logoGradientHome" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#F9A1A1;" />
+                            <stop offset="100%" style="stop-color:#F38181;" />
+                        </linearGradient>
+                    </defs>
+                    <path fill="url(#logoGradientHome)" d="M35.25,5.13c-11.5,0-20.83,9.33-20.83,20.83c0,10.5,7.75,19.2,17.92,20.67l-0.16,10.17c-0.02,1.63,1.3,2.95,2.93,2.95h3.33c1.63,0,2.95-1.32,2.93-2.95l-0.16-10.17c10.17-1.47,17.92-9.17,17.92-20.67C56.08,14.46,46.75,5.13,35.25,5.13z"/>
+                    <text x="34.5" y="38" font-family="Inter, sans-serif" font-size="24" font-weight="800" fill="#FFFFFF" text-anchor="middle">?</text>
+                </svg>
+            </h1>
             
             <div class="session-controls">
                 <h2>Entrar em Sessão</h2>
                 <input type="text" id="session-id-input" placeholder="ID da Sessão (6 letras)">
                 <div class="session-buttons">
-                    <button id="join-session-btn" class="start-btn" style="background-color: #28a745;">Entrar</button> <!-- Verde -->
+                    <button id="join-session-btn" class="start-btn" style="background-color: #95E1D3;">Entrar</button> <!-- Verde Pastel -->
                     <button id="create-session-btn" class="start-btn">Criar Nova Sessão</button> <!-- Azul Padrão -->
                 </div>
             </div>
