@@ -66,6 +66,11 @@ function listenToAppData() {
         if (docSnap.exists()) {
             appData = docSnap.data();
             console.log("Dados de listas sincronizados do Firestore:", appData);
+            // NOVO: Se a tela de gerenciamento de categorias estiver ativa,
+            // atualiza a lista para refletir os novos dados.
+            if (screens.manageCategory.classList.contains('active')) {
+                renderManageCategoryList();
+            }
         } else {
             // Se o documento não existir, cria com os dados padrão
             console.log("Nenhum dado de lista encontrado no Firestore. Criando com dados padrão...");
@@ -223,8 +228,10 @@ function showError(message) {
  */
 function createSession() {
     isCreator = true;
-    // Leva o criador para a tela de seleção de categoria.
-    renderCategorySelection();
+    // O renderCategorySelection() agora é chamado DENTRO de switchScreen,
+    // mas para garantir que os dados mais recentes sejam usados, vamos chamá-lo aqui.
+    // Como appData já foi carregado no início, isso funcionará.
+    renderCategorySelection(); 
     switchScreen('category-select-screen');
 }
 
@@ -346,14 +353,31 @@ function handleSessionStateChange(data) {
     if (isCreator && !data.joinerId) {
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
-        } 
-        updateLobbyStatus();
+        }
+        // A função updateLobbyStatus é chamada dentro de switchScreen('lobby') no novo código
+        updateLobbyStatus(); 
         return;
     }
 }
 
 /**
  * Atualiza a UI do Lobby (aguardando jogador)
+ */
+function updateLobbyStatus() {
+    elements.sessionIdDisplay.textContent = currentSessionId;
+    elements.lobbyStatus.textContent = "Aguardando outro jogador entrar...";
+}
+
+/**
+ * Atualiza a UI do Lobby (aguardando jogador)
+ */
+function updateLobbyStatus() {
+    elements.sessionIdDisplay.textContent = currentSessionId;
+    elements.lobbyStatus.textContent = "Aguardando outro jogador entrar...";
+}
+
+/**
+ * Limpa o estado da sessão e volta para casa.
  */
 function leaveSession() {
     if (sessionUnsubscribe) {
