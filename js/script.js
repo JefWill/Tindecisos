@@ -343,12 +343,12 @@ function handleSessionStateChange(data) {
     }
 
     // 3. Lobby: Criador aguardando o segundo jogador.
-    // (A categoria já foi escolhida, então só precisamos esperar)
-    if (isCreator) {
+    if (isCreator && !data.joinerId) {
         if (currentScreenId !== 'lobby-screen') {
             switchScreen('lobby');
         }
-        updateLobbyStatus(false); // false = aguardando
+        // A função updateLobbyStatus é chamada dentro de switchScreen('lobby') no novo código
+        updateLobbyStatus(); 
         return;
     }
 }
@@ -356,15 +356,9 @@ function handleSessionStateChange(data) {
 /**
  * Atualiza a UI do Lobby (aguardando jogador)
  */
-function updateLobbyStatus(isJoinerConnected, customMessage = "") {
+function updateLobbyStatus() {
     elements.sessionIdDisplay.textContent = currentSessionId;
-    if (customMessage) {
-        elements.lobbyStatus.textContent = customMessage;
-    } else {
-        elements.lobbyStatus.textContent = isJoinerConnected 
-            ? "Jogador 2 conectado! O criador está escolhendo a categoria..."
-            : "Aguardando outro jogador entrar...";
-    }
+    elements.lobbyStatus.textContent = "Aguardando outro jogador entrar...";
 }
 
 /**
