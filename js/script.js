@@ -360,13 +360,6 @@ function handleSessionStateChange(data) {
     }
 }
 
-/**
- * Atualiza a UI do Lobby (aguardando jogador)
- */
-function updateLobbyStatus() {
-    elements.sessionIdDisplay.textContent = currentSessionId;
-    elements.lobbyStatus.textContent = "Aguardando outro jogador entrar...";
-}
 
 /**
  * Limpa o estado da sessão e volta para casa.
