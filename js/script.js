@@ -24,7 +24,7 @@ const allowedEmails = [
     "jessicaminern@gmail.com",
     "jeffersonwillamern@gmail.com",
     "pedrobilau177@gmail.com",
-    "ellydapereira124@gmail.com"
+    "ellydapereira596@gmail.com"
 ];
 
 // --- Elementos de UI Globais ---
