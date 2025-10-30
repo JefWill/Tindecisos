@@ -76,8 +76,10 @@ export async function handleLogin() {
 
 export async function handleLogout() {
     try {
+        // 1. Primeiro, limpa a sessão no Firestore (enquanto o usuário ainda está logado)
+        await leaveSession();
+        // 2. Depois, desloga o usuário do Firebase Auth
         await signOut(state.auth);
-        leaveSession();
     } catch (error) {
         showError("Ocorreu um erro ao sair.");
     }

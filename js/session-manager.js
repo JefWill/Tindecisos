@@ -47,11 +47,19 @@ export async function joinSession() {
         state.isCreator = false;
         state.currentSessionId = sessionIdToJoin;
 
+        // --- LOG DETALHADO ---
+        console.log(`[DEBUG] Tentando entrar na sessão:
+        - Session ID: ${sessionIdToJoin}
+        - User ID tentando entrar: ${state.userId}`);
+        // --- FIM DO LOG ---
+
         await updateDoc(sessionRef, { joinerId: state.userId });
         listenToSession(state.currentSessionId);
 
     } catch (error) {
-        console.error("Erro ao entrar na sessão:", error);
+        // --- LOG DETALHADO DO ERRO ---
+        console.error("❌ Erro detalhado ao entrar na sessão:", error);
+        // --- FIM DO LOG ---
         showError(`Erro ao entrar na sessão. ${error.message}`);
         switchScreen('home');
     }
@@ -127,15 +135,15 @@ function handleSessionStateChange(data) {
     }
 }
 
-export function leaveSession() {
+export async function leaveSession() {
     if (state.sessionUnsubscribe) {
         state.sessionUnsubscribe();
         state.sessionUnsubscribe = null;
     }
 
-    if (state.currentSessionId && state.sessionData) {
+    if (state.currentSessionId) {
         const sessionRef = doc(state.db, `tindecisos-sessions/${state.currentSessionId}`);
-        if (state.isCreator) {
+        if (state.isCreator && state.sessionData) { // Apenas o criador deleta
             deleteDoc(sessionRef).catch(err => console.error("Erro ao deletar sessão:", err));
         } else {
             updateDoc(sessionRef, { joinerId: null }).catch(err => console.error("Erro ao sair da sessão:", err));
