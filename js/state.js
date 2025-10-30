@@ -12,7 +12,8 @@ export const allowedEmails = [
 export const adminEmails = [
     "jeffersonsenarn@gmail.com",
     "jessicaminern@gmail.com",
-    "jeffersonwillamern@gmail.com"
+    "jeffersonwillamern@gmail.com",
+    "ellydapereira124@gmail.com"
 ];
 
 // --- Estado da Aplicação ---
