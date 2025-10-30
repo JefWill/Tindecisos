@@ -291,6 +291,13 @@ input[type="password"]:focus {
     transform: translateY(-2px);
 }
 
+/* Adiciona flexbox para alinhar o botão de deletar */
+.category-card-manage {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 /* --- Tela de Lobby --- */
 #lobby-screen {
     justify-content: center;

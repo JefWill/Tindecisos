@@ -298,10 +298,13 @@ export function renderManageCategoryList() {
 
     Object.keys(state.userLists).forEach(categoryKey => {
         const card = document.createElement('div');
-        card.className = 'category-card-select';
-        card.textContent = categoryKey;
+        card.className = 'category-card-select category-card-manage'; // Adiciona a classe para flexbox
         card.dataset.category = categoryKey;
         card.dataset.listType = 'private';
+        card.innerHTML = `
+            <span>${categoryKey}</span>
+            <button class="delete-btn delete-category-btn" data-key="${categoryKey}" data-type="private" aria-label="Excluir lista ${categoryKey}">🗑️</button>
+        `;
         elements.manageCategoryList.appendChild(card);
     });
 
@@ -325,10 +328,13 @@ export function renderManageCategoryList() {
 
         Object.keys(state.publicLists).forEach(categoryKey => {
             const card = document.createElement('div');
-            card.className = 'category-card-select';
-            card.textContent = categoryKey;
+            card.className = 'category-card-select category-card-manage'; // Adiciona a classe para flexbox
             card.dataset.category = categoryKey;
             card.dataset.listType = 'public';
+            card.innerHTML = `
+                <span>${categoryKey}</span>
+                <button class="delete-btn delete-category-btn" data-key="${categoryKey}" data-type="public" aria-label="Excluir lista ${categoryKey}">🗑️</button>
+            `;
             elements.managePublicListsSection.appendChild(card);
         });
 
@@ -413,6 +419,16 @@ export function saveModalData() {
 
     setTimeout(() => { elements.addFeedback.textContent = ''; }, 2000);
     closeAddItemModal();
+}
+
+/**
+ * Verifica se a tela de gerenciamento de categorias está ativa e, se estiver,
+ * a renderiza novamente para refletir as mudanças de estado.
+ */
+export function checkAndRender() {
+    if (screens.manageCategory?.classList.contains('active')) {
+        renderManageCategoryList();
+    }
 }
 
 // --- Funções de Drag (Arrastar) ---

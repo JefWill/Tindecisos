@@ -1,7 +1,7 @@
 // js/firestore-service.js
-import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, onSnapshot, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { state } from './state.js';
-import { showError, renderManageCategoryList } from './ui-manager.js';
+import { showError, checkAndRender } from './ui-manager.js';
 
 const defaultPublicData = {
     "Hobbies": [
@@ -33,6 +33,7 @@ export function listenToPublicLists() {
             savePublicLists();
         }
         state.arePublicListsReady = true;
+        checkAndRender(); // Atualiza a UI se a tela de gerenciamento estiver aberta
     });
 }
 
@@ -47,13 +48,7 @@ export function listenToUserLists(uid) {
             console.log("Usuário não possui listas privadas ainda.");
         }
         state.areUserListsReady = true;
-        
-        // Importa screens dinamicamente para evitar dependência circular
-        import('./ui-manager.js').then(({ screens }) => {
-            if (screens.manageCategory?.classList.contains('active')) {
-                renderManageCategoryList();
-            }
-        });
+        checkAndRender(); // Atualiza a UI se a tela de gerenciamento estiver aberta
     });
 }
 
@@ -75,5 +70,23 @@ export async function savePublicLists() {
     } catch (error) {
         console.error("Erro ao salvar dados das listas no Firestore:", error);
         showError("Erro ao sincronizar listas.");
+    }
+}
+
+export async function deleteCategory(categoryKey, listType) {
+    if (!state.userId) return;
+
+    if (listType === 'private') {
+        const userListRef = doc(state.db, "user-lists", state.userId);
+        await updateDoc(userListRef, {
+            [categoryKey]: deleteField()
+        });
+        // A UI será atualizada automaticamente pelo listener 'listenToUserLists'
+    } else if (listType === 'public' && state.isAdmin) {
+        const publicListRef = doc(state.db, "app-data", "lists");
+        await updateDoc(publicListRef, {
+            [categoryKey]: deleteField()
+        });
+        // A UI será atualizada automaticamente pelo listener 'listenToPublicLists'
     }
 }
