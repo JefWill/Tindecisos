@@ -127,6 +127,17 @@ h1, h2, h3 {
     transform: none;
 }
 
+/* Botão Terciário (borda primária, fundo branco) */
+.tertiary-btn {
+    background-color: var(--surface);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    box-shadow: none;
+}
+.tertiary-btn:hover {
+    background-color: #eaf5ff; /* Um azul bem claro */
+}
+
 /* --- Estilos Gerais de Inputs --- */
 input[type="text"],
 input[type="email"],
