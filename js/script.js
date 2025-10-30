@@ -1,35 +1,15 @@
-// Importar os serviços do Firebase necessários
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, collection, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// js/script.js - Arquivo Principal (Orquestrador)
 
-// --- Configuração do Firebase ---
-// A variável firebaseConfig é importada do arquivo firebase-config.js no HTML
+import { state } from './state.js';
+import { deleteCategory } from './firestore-service.js';
+import { initializeAppFirebase, handleLogin, handleLogout } from './firebase-auth.js';
+import { createSession, joinSession, leaveSession, handleSwipe } from './session-manager.js';
+import {
+    mapUI, renderLogo, switchScreen, renderManageCategoryList, closeAddItemModal, showError,
+    saveModalData, openEditModal, deleteItem, showAddItemModal, handleManageCategoryClick,
+    dragStart, dragMove, dragEnd, elements
+} from './ui-manager.js';
 
-let db, auth, userId, appId;
-let sessionUnsubscribe = null; // Para limpar o listener do Firestore
-
-// Estado da sessão do jogo
-let currentSessionId = null;
-let isCreator = false;
-let sessionData = null; // Cópia local dos dados da sessão
-let currentCategoryKey = null; // Categoria sendo gerenciada
-let currentEditIndex = null; // Índice do item sendo editado
-let isAppDataReady = false; // Flag para saber se appData já carregou
-
-// --- Lista de Usuários Autorizados ---
-const allowedEmails = [
-    "jeffersonsenarn@gmail.com",
-    "jessicaminern@gmail.com",
-    "jeffersonwillamern@gmail.com",
-    "pedrobilau177@gmail.com",
-    "ellydapereira124@gmail.com"
-];
-
-// --- Elementos de UI Globais ---
-let screens = {};
-let elements = {};
 let buttons = {};
 
 // --- Inicialização do DOM ---
@@ -38,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Mapeia todos os elementos da UI
     mapUI();
-    
+
     // Mapeia botões
     buttons = {
         login: document.getElementById('login-btn'),
