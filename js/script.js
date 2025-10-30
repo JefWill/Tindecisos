@@ -2,7 +2,7 @@
 
 import { state } from './state.js';
 import { deleteCategory } from './firestore-service.js';
-import { initializeAppFirebase, handleLogin, handleLogout } from './firebase-auth.js';
+import { initializeAppFirebase, handleLogin, handleLogout, handleForgotPassword } from './firebase-auth.js';
 import { createSession, joinSession, leaveSession, handleSwipe } from './session-manager.js';
 import {
     mapUI, renderLogo, switchScreen, renderManageCategoryList, closeAddItemModal, showError,
@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmDelete: document.getElementById('confirm-delete-btn'),
         cancelDelete: document.getElementById('cancel-delete-btn'),
         confirmModal: document.getElementById('confirm-modal'),
-        confirmModalText: document.getElementById('confirm-modal-text')
+        confirmModalText: document.getElementById('confirm-modal-text'),
+        forgotPassword: document.getElementById('forgot-password-link')
     };
     
     // --- Renderiza elementos reutilizáveis ---
@@ -49,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     buttons.login.addEventListener('click', handleLogin);
     elements.emailInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
     elements.passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+    buttons.forgotPassword.addEventListener('click', handleForgotPassword);
 
     // Tela Inicial
     buttons.createSession.addEventListener('click', () => {

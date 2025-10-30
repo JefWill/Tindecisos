@@ -1,6 +1,6 @@
 // js/firebase-auth.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { state, allowedEmails, adminEmails } from './state.js';
 import { switchScreen, showError, elements } from './ui-manager.js';
@@ -83,4 +83,22 @@ export async function handleLogout() {
     } catch (error) {
         showError("Ocorreu um erro ao sair.");
     }
+}
+
+export function handleForgotPassword() {
+    const email = elements.emailInput.value.trim();
+    if (!email) {
+        showError("Por favor, digite seu e-mail no campo acima e clique em 'Esqueci minha senha' novamente.");
+        elements.emailInput.focus();
+        return;
+    }
+
+    sendPasswordResetEmail(state.auth, email)
+        .then(() => {
+            showError(`Um e-mail de redefinição foi enviado para ${email}. Verifique sua caixa de entrada.`);
+        })
+        .catch((error) => {
+            console.error("Erro ao enviar e-mail de redefinição:", error);
+            showError("Não foi possível enviar o e-mail. Verifique se o e-mail está correto.");
+        });
 }
