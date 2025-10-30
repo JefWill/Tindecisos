@@ -6,14 +6,15 @@ export const allowedEmails = [
     "jessicaminern@gmail.com",
     "jeffersonwillamern@gmail.com",
     "pedrobilau177@gmail.com",
-    "ellydapereira124@gmail.com"
+    "ellydapereira596@gmail.com",
+    "testetindecisos@gmail.com"
 ];
 
 export const adminEmails = [
     "jeffersonsenarn@gmail.com",
     "jessicaminern@gmail.com",
     "jeffersonwillamern@gmail.com",
-    "ellydapereira124@gmail.com"
+    "ellydapereira596@gmail.com"
 ];
 
 // --- Estado da Aplicação ---
