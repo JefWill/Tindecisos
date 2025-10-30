@@ -61,10 +61,11 @@
         <!-- Tela de Seleção de Categoria (para o Criador) -->
         <div class="screen" id="category-select-screen">
             <div class="logo-container"></div>
-            <h2>Escolha uma Categoria</h2>
+            <h2>Escolha uma Lista</h2>
             <div id="category-select-list">
                 <!-- Lista de categorias preenchida por JS -->
             </div>
+            <p id="category-select-feedback" style="font-size: 0.9rem; color: #777; margin-top: 1rem;"></p>
             <button id="back-to-home-from-category" class="secondary-btn" style="margin-top: 1rem;">Voltar</button>
         </div>
         
@@ -110,10 +111,15 @@
         <!-- Tela de Gerenciamento - Categorias -->
         <div class="screen" id="manage-category-screen">
             <div class="logo-container"></div>
-            <h2>Gerenciar Listas</h2>
-            <p style="font-size: 0.9rem; color: #777; margin-bottom: 1.5rem;">(Estas listas são sincronizadas entre todos os usuários)</p>
+            <h2>Gerenciar Minhas Listas</h2>
+            <p style="font-size: 0.9rem; color: #777; margin-bottom: 1.5rem;">Crie e edite suas listas privadas. Elas só aparecerão para você.</p>
             <div id="manage-category-list">
                 <!-- Lista de categorias para gerenciar, preenchida por JS -->
+            </div>
+            
+            <!-- Seção de Gerenciamento de Listas Públicas (apenas para admins) -->
+            <div id="manage-public-lists-section" style="display: none; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <h3 style="margin-bottom: 1rem;">Gerenciar Listas Públicas (Admin)</h3>
             </div>
             <button id="back-to-home-from-manage-cat-btn" class="secondary-btn" style="margin-top: 1.5rem;">Voltar</button>
         </div>

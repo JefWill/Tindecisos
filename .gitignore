@@ -1,2 +1,5 @@
-# Arquivos de configuração que não devem ir para o repositório
+# Arquivos de configuração local e de dependências
 js/firebase-config.js
+
+# Arquivos de documentação interna que não precisam ir para o repositório
+contexto.md
